@@ -3,6 +3,8 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import org.firstinspires.ftc.teamcode.util.HardwareNames;
+import org.firstinspires.ftc.teamcode.util.MathUtils;
 @TeleOp (name = "Omni Drive", group = "TeleOp")
 public class s1_omnidrive_shell extends LinearOpMode {
     //Declare Motors to Driver Hub
@@ -11,8 +13,8 @@ public class s1_omnidrive_shell extends LinearOpMode {
     @Override
     public void runOpMode () {
         //Initialize hardware stack
-        leftMotor = hardwareMap.get (DcMotor.class, "left_motor");
-        rightMotor = hardwareMap.get (DcMotor.class, "right_motor");
+        leftMotor = hardwareMap.get (DcMotor.class, HardwareNames.LEFT_MOTOR);
+        rightMotor = hardwareMap.get (DcMotor.class, HardwareNames.RIGHT_MOTOR);
         //Reverse one side so the robot drives linearly with both sticks in same direction
         leftMotor.setDirection (DcMotorSimple.Direction.REVERSE);
         rightMotor.setDirection (DcMotorSimple.Direction.FORWARD);
@@ -20,10 +22,10 @@ public class s1_omnidrive_shell extends LinearOpMode {
         telemetry.update ();
         waitForStart ();
         while (opModeIsActive ()) {
-            //Omni Drive 2 mtr setup: 
-            //Drives exactly like tank, lateral allowed however.
-            double leftPower = -gamepad1.left_stick_y;
-            double rightPower = -gamepad1.right_stick_y;
+            //Omni Drive 2 motor setup: 
+            //Tank Drive Style with Omnidirectional movement paths available
+            double leftPower = MathUtils.deadband (-gamepad1.left_stick_y, RobotConstants.DRIVE_STICK_DEADBAND);
+            double rightPower = MathUtils.deadband (-gamepad1.right_stick_y, RobotConstants.DRIVE_STICK_DEADBAND);
             //Send power to motors
             leftMotor.setPower (leftPower);
             rightMotor.setPower (rightPower);

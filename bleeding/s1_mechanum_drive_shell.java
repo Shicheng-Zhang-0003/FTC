@@ -3,6 +3,8 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import org.firstinspires.ftc.teamcode.util.HardwareNames;
+import org.firstinspires.ftc.teamcode.util.MathUtils;
 @TeleOp(name = "Mecanum Stage 1", group = "TeleOp")
 public class s1_mechanum_drive_shell extends LinearOpMode {
     //Declare Motors to Driver Hub Configs (Cross Chceck and reference beforehand)
@@ -13,10 +15,10 @@ public class s1_mechanum_drive_shell extends LinearOpMode {
     @Override
     public void runOpMode() {
         //Initialize hardware
-        frontLeft = hardwareMap.get (DcMotor.class, "front_left");
-        frontRight = hardwareMap.get (DcMotor.class, "front_right");
-        backLeft = hardwareMap.get (DcMotor.class, "back_left");
-        backRight = hardwareMap.get (DcMotor.class, "back_right");
+        frontLeft = hardwareMap.get (DcMotor.class, HardwareNames.FRONT_LEFT);
+        frontRight = hardwareMap.get (DcMotor.class, HardwareNames.FRONT_RIGHT);
+        backLeft = hardwareMap.get (DcMotor.class, HardwareNames.BACK_LEFT);
+        backRight = hardwareMap.get (DcMotor.class, HardwareNames.BACK_RIGHT);
         //Reverse the left side so the robot drives forward
         frontLeft.setDirection (DcMotorSimple.Direction.REVERSE);
         backLeft.setDirection (DcMotorSimple.Direction.REVERSE);
@@ -28,9 +30,9 @@ public class s1_mechanum_drive_shell extends LinearOpMode {
         while (opModeIsActive ()) {
             //Mecanum Drive Controls
             //Left Stick = WS, Strafe. Right Stick, Rotational
-            double y = -gamepad1.left_stick_y; //Y is reversed on the gamepad
-            double x = gamepad1.left_stick_x * 1.1; // Multiplied by 1.1 to counteract imperfect strafing
-            double rx = gamepad1.right_stick_x;
+            double y = MathUtils.deadband (-gamepad1.left_stick_y, RobotConstants.DRIVE_STICK_DEADBAND);
+            double x = MathUtils.deadband (gamepad1.left_stick_x, RobotConstants.DRIVE_STICK_DEADBAND) * RobotConstants.DRIVE_MECANUM_STRAFE_COMPENSATION;
+            double rx = MathUtils.deadband (gamepad1.right_stick_x, RobotConstants.DRIVE_STICK_DEADBAND);
             //Calculate wheel powers using standard mecanum kinematics
             double denominator = Math.max (Math.abs (y) + Math.abs (x) + Math.abs (rx), 1);
             double frontLeftPower = (y + x + rx) / denominator;

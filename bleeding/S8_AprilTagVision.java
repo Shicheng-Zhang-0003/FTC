@@ -1,7 +1,8 @@
 package org.firstinspires.ftc.teamcode;
+
+import org.firstinspires.ftc.teamcode.util.HardwareNames;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.vision.VisionPortal;
@@ -57,7 +58,7 @@ public class S8_AprilTagVision extends LinearOpMode {
         VisionPortal.Builder builder = new VisionPortal.Builder ();
         //Webcam
         if (hardwareMap.getAll (WebcamName.class).isEmpty ()) {builder.setCamera (BuiltinCameraDirection.BACK);} 
-        else {builder.setCamera (hardwareMap.get (WebcamName.class, "Main Cam"));}
+        else {builder.setCamera (hardwareMap.get(WebcamName.class, HardwareNames.WEBCAM));}
         builder.addProcessor (aprilTag);
         visionPortal = builder.build ();
     }

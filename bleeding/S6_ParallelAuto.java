@@ -5,7 +5,9 @@ import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+@Disabled
 @Autonomous (name = "Parallel Operands", group = "S6: Advanced")
 public class S6_ParallelAuto extends LinearOpMode {
     @Override
@@ -29,7 +31,7 @@ public class S6_ParallelAuto extends LinearOpMode {
                         .build ()
                 ), //Wait for the hopper to fill completely
                 //The intake is still spinning from the previous command because no termination command is sent yet
-                hopper.waitForFill (1.5),
+                hopper.waitForFill (RobotConstants.TIMING_INTAKE_FILL_SECONDS),
                 //Stop the intake AND turn around SIMULTANEOUSLY
                 new ParallelAction (
                     hopper.stopIntake (),

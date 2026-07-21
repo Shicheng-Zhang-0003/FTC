@@ -1,8 +1,9 @@
 package org.firstinspires.ftc.teamcode;
+
+import org.firstinspires.ftc.teamcode.util.HardwareNames;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
-import com.acmerobotics.roadrunner.Action;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -18,54 +19,63 @@ public class S7_StateMachineHopper {
     } private State currentState = State.IDLE;
     private DcMotor intakeMotor;
     private Servo dumpServo;
-    //Pass hardwareMap and initialize motors and servos
+    private boolean initialised = false;
+    private void requireInitialised () {
+        if (!initialised) {throw new IllegalStateException ("S7_StateMachineHopper not initialised properly");}
+    } //Pass hardwareMap and initialize motors and servos
     public void init (DcMotor motor, Servo servo) {
         intakeMotor = motor;
         dumpServo = servo;
-        dumpServo.setPosition (0.1); // Stowed position
+        dumpServo.setPosition (RobotConstants.SERVO_DUMP_STOWED); //Stowed position
+        initialised = true;
     } //Current State of being filled or not
     public State getState () {return currentState;}
     //Start intaking Pollen
     public void startIntake () {
+        requireInitialised ();
         if ((currentState == State.IDLE) || (currentState == State.FILLED)) {
             currentState = State.INTAKING;
             intakeMotor.setPower (1.0);
         }
     } //Stop intake, total stow is completely filled
     public void stopIntake () {
+        requireInitialised ();
         if (currentState == State.INTAKING) {
             intakeMotor.setPower (0);
             currentState = State.FILLED;
         }
     } //Start dumping
     public void startDump () {
+        requireInitialised ();
         if (currentState == State.FILLED) {
             currentState = State.DUMPING;
-            dumpServo.setPosition (0.9); //Dump position
+            dumpServo.setPosition (RobotConstants.SERVO_DUMP_ACTIVE); //Dump position
         }
     } //Finish dumping, motors return to idling
     public void finishDump () {
+        requireInitialised ();
         if (currentState == State.DUMPING) {
-            dumpServo.setPosition (0.1); //Stow Pollen Dump
+            dumpServo.setPosition (RobotConstants.SERVO_DUMP_STOWED); //Stow Pollen Dump
             currentState = State.IDLE;
         }
     } //Update method (call this in your loop)
     public void update (TelemetryPacket packet) {
-        packet.put ("Hopper State", currentState.toString ());
-        //Add any automatic transitions here
-        //Sensor example:
-        //if ((currentState == State.INTAKING) && (sensorDetectedGamePiece ())) {stopIntake ();}
+        packet.put ("Hopper Initialised", initialised);
+        if (!initialised) {return;}
+        packet.put ("Hopper Status", currentState.toString ());
     } //TeleOp OpMode to test the state machine
     @TeleOp(name = "State Machine Hopper", group = "S7: State Machines")
     public static class TestHopper extends LinearOpMode {
         @Override
         public void runOpMode () {
             S7_StateMachineHopper hopper = new S7_StateMachineHopper ();
-            DcMotor intake = hardwareMap.get (DcMotor.class, "intake_motor");
-            Servo dump = hardwareMap.get (Servo.class, "dump_servo");
+            DcMotor intake = hardwareMap.get(DcMotor.class, HardwareNames.INTAKE_MOTOR);
+            Servo dump = hardwareMap.get(Servo.class, HardwareNames.DUMP_SERVO);
             hopper.init (intake, dump);
-            waitForStart ();
             telemetry = new MultipleTelemetry (telemetry, FtcDashboard.getInstance ().getTelemetry ());
+            telemetry.addData ("Status", "RDY");
+            telemetry.update ();
+            waitForStart ();
             while (opModeIsActive ()) {
                 //Controls
                 if (gamepad1.a) {hopper.startIntake ();} 
@@ -75,6 +85,7 @@ public class S7_StateMachineHopper {
                 //Update state machine
                 TelemetryPacket packet = new TelemetryPacket ();
                 hopper.update (packet);
+                FtcDashboard.getInstance ().sendTelemetryPacket (packet);
                 telemetry.addData ("Current State", hopper.getState ());
                 telemetry.update ();
             }

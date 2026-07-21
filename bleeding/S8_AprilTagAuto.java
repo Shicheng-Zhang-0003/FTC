@@ -1,15 +1,17 @@
 package org.firstinspires.ftc.teamcode;
 import com.acmerobotics.roadrunner.Pose2d;
-import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+import org.firstinspires.ftc.teamcode.util.HardwareNames;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import java.util.List;
+@Disabled
 @Autonomous(name = "AprilTag Alignment", group = "S8: Vision")
 public class S8_AprilTagAuto extends LinearOpMode {
     private AprilTagProcessor aprilTag;
@@ -41,15 +43,10 @@ public class S8_AprilTagAuto extends LinearOpMode {
             double headingError = Math.toDegrees (targetTag.robotPose.getOrientation ().getYaw ());
             //Small corrections for miniature alignments
             //Ex: If 5 inches to the right, strafe left 5 inches
-            Actions.runBlocking (
-                drive.actionBuilder (drive.localizer.getPose ())
-                    .strafeTo (new Vector2d (
-                        drive.localizer.getPose ().position.x - xOffset,
-                        drive.localizer.getPose ().position.y
-                    ))
-                    .turn (-headingError * Math.PI / 180) //Correct heading
-                    .build ()
-            ); telemetry.addLine ("Alignment Complete");
+            telemetry.addData ("Alignment xOffset", xOffset);
+            telemetry.addData ("Alignment yOffset", yOffset);
+            telemetry.addData ("Alignment headingError", headingError);
+            telemetry.addLine ("Todo, convert camera-relative offsets to field-relative correction before moving.");
             telemetry.update ();
         } else {
             telemetry.addLine ("Tag Missing. Stasis");
@@ -77,7 +74,7 @@ public class S8_AprilTagAuto extends LinearOpMode {
             .build ();
         VisionPortal.Builder builder = new VisionPortal.Builder ();
         if (hardwareMap.getAll (WebcamName.class).isEmpty ()) {builder.setCamera (BuiltinCameraDirection.BACK);} 
-        else {builder.setCamera(hardwareMap.get(WebcamName.class, "Main Cam"));}
+        else {builder.setCamera (hardwareMap.get (WebcamName.class, HardwareNames.WEBCAM));}
         builder.addProcessor (aprilTag);
         visionPortal = builder.build ();
     }
