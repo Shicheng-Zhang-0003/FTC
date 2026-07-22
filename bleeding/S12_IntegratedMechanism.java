@@ -1,5 +1,4 @@
 package org.firstinspires.ftc.teamcode;
-
 import org.firstinspires.ftc.teamcode.util.HardwareNames;
 import org.firstinspires.ftc.teamcode.util.MathUtils;
 import org.firstinspires.ftc.teamcode.util.PIDController;
@@ -154,9 +153,8 @@ public class S12_IntegratedMechanism {
                 else if (gamepad1.x) {mech.emergencyStop ();}
                 //Update Runtime Mechanism
                 TelemetryPacket packet = new TelemetryPacket ();
-                
-            mech.update(packet);
-            FtcDashboard.getInstance().sendTelemetryPacket(packet);
+            mech.update (packet);
+            FtcDashboard.getInstance ().sendTelemetryPacket (packet);
                 telemetry.addData ("State", mech.getState ());
                 telemetry.update ();
             }

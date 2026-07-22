@@ -59,12 +59,8 @@ public class S4_SimpleAuto extends LinearOpMode {
         while ((opModeIsActive ()) && (runtime.seconds () < 5.0) && ((frontLeft.isBusy ()) || (frontRight.isBusy ()) || (backLeft.isBusy ()) || (backRight.isBusy ()))) {
             telemetry.addData ("Driving", "Forward %.1f inches", inches);
             telemetry.update ();
-        }
-
-        stopMotors();
-    }
-
-    private void strafeRight(double inches, double power) {
+        } stopMotors ();
+    } private void strafeRight(double inches, double power) {
         int targetTicks = (int) (inches * RobotConstants.DRIVE_TICKS_PER_INCH);
         frontLeft.setTargetPosition (frontLeft.getCurrentPosition () + targetTicks);
         frontRight.setTargetPosition (frontRight.getCurrentPosition () - targetTicks);
@@ -79,7 +75,7 @@ public class S4_SimpleAuto extends LinearOpMode {
         backLeft.setPower (power);
         backRight.setPower (power);
         runtime.reset ();
-        while (opModeIsActive () && runtime.seconds () < 5.0 && ((frontLeft.isBusy ()) || (frontRight.isBusy ()) || (backLeft.isBusy ()) || (backRight.isBusy ()))) {
+        while ((opModeIsActive ()) && (runtime.seconds () < 5.0) && ((frontLeft.isBusy ()) || (frontRight.isBusy ()) || (backLeft.isBusy ()) || (backRight.isBusy ()))) {
             telemetry.addData ("Strafing", "Right %.1f inches", inches);
             telemetry.update ();
         } stopMotors ();

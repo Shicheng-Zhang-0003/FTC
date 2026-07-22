@@ -1,5 +1,4 @@
 package org.firstinspires.ftc.teamcode;
-
 import org.firstinspires.ftc.teamcode.util.HardwareNames;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
@@ -46,7 +45,7 @@ public class S10_SensorHopper {
     private boolean atTopLimit () {
         boolean raw = topLimitSwitch.getState ();
         return RobotConstants.SENSOR_LIMIT_SWITCH_INVERTED ? !raw : raw;
-    } // Most limit switches are inverted}
+    } //Most limit switches are inverted
     //Command: Start intaking
     public void startIntake () {
         requireInitialised ();
