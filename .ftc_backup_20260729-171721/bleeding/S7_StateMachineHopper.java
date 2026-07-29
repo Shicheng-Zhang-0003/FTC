@@ -1,6 +1,4 @@
 package org.firstinspires.ftc.teamcode;
-
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import org.firstinspires.ftc.teamcode.util.HardwareNames;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.FtcDashboard;
@@ -65,7 +63,6 @@ public class S7_StateMachineHopper {
         if (!initialised) {return;}
         packet.put ("Hopper Status", currentState.toString ());
     } //TeleOp OpMode to test the state machine
-    @Disabled
     @TeleOp(name = "State Machine Hopper", group = "S7: State Machines")
     public static class TestHopper extends LinearOpMode {
         @Override

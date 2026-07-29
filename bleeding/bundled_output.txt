@@ -1,40 +1,131 @@
-========== File: ./utils/MathUtils.java ==========
-package org.firstinspires.ftc.teamcode.util;
-public final class MathUtils {
-    private MathUtils () {}
-    public static double clamp (double value, double min, double max) {return Math.max (min, Math.min (max, value));}
-    public static int clamp (int value, int min, int max) {return Math.max (min, Math.min (max, value));}
-    public static double deadband (double value, double threshold) {return Math.abs (value) < threshold ? 0.0 : value;}
-    public static boolean within (double value, double target, double tolerance) {return Math.abs (value - target) <= tolerance;}
-}
-
-
-
-========== File: ./utils/DebouncedBoolean.java ==========
-package org.firstinspires.ftc.teamcode.util;
-public class DebouncedBoolean {
-    private boolean stableValue;
-    private double stableTime = 0;
-    public DebouncedBoolean (boolean initialValue) {stableValue = initialValue;}
-    public boolean update (boolean rawValue, double dt, double debounceTime) {
-        if (debounceTime <= 0) {
-            stableValue = rawValue;
-            stableTime = 0;
-            return stableValue;
-        } if (rawValue == stableValue) {
-            stableTime = 0;
-            return stableValue;
-        } stableTime += dt;
-        if (stableTime >= debounceTime) {
-            stableValue = rawValue;
-            stableTime = 0;
-        } return stableValue;
+========== File: ./S11_PIDLinearSlide.java ==========
+package org.firstinspires.ftc.teamcode;
+import org.firstinspires.ftc.teamcode.util.HardwareNames;
+import org.firstinspires.ftc.teamcode.util.MathUtils;
+import org.firstinspires.ftc.teamcode.util.PIDController;
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.util.ElapsedTime;
+@TeleOp (name = "Test: PID Linear Slide", group = "S11: PID Control")
+public class S11_PIDLinearSlide extends LinearOpMode {
+    private DcMotorEx slideMotor;
+    private PIDController pid;
+    private final ElapsedTime loopTimer = new ElapsedTime ();
+    @Override
+    public void runOpMode () {
+        slideMotor = hardwareMap.get (DcMotorEx.class, HardwareNames.SLIDE_MOTOR);
+        slideMotor.setMode (DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        slideMotor.setMode (DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        slideMotor.setZeroPowerBehavior (DcMotor.ZeroPowerBehavior.BRAKE);
+        slideMotor.setDirection (DcMotor.Direction.FORWARD);
+        pid = new PIDController (RobotConstants.SLIDE_P, RobotConstants.SLIDE_I, RobotConstants.SLIDE_D);
+        pid.setIntegralClamp (RobotConstants.SLIDE_INTEGRAL_CLAMP);
+        pid.setOutputClamp (RobotConstants.SLIDE_OUTPUT_CLAMP);
+        telemetry = new MultipleTelemetry (telemetry, FtcDashboard.getInstance ().getTelemetry ());
+        telemetry.addData ("Status", "PID Slide Ready");
+        telemetry.addData ("Instructions", "Use dpad up/down/left/right to set position");
+        telemetry.update ();
+        int targetPosition = 0;
+        waitForStart ();
+        loopTimer.reset ();
+        pid.reset ();
+        while (opModeIsActive ()) {
+            if (gamepad1.dpad_up) {targetPosition = RobotConstants.SLIDE_SCORE_HIGH;} 
+            else if (gamepad1.dpad_down) {targetPosition = RobotConstants.SLIDE_GROUND;} 
+            else if (gamepad1.dpad_left) {targetPosition = RobotConstants.SLIDE_LOW;} 
+            else if (gamepad1.dpad_right) {targetPosition = RobotConstants.SLIDE_MAX_SAFE;}
+            targetPosition = MathUtils.clamp (targetPosition, RobotConstants.SLIDE_GROUND, RobotConstants.SLIDE_MAX_SAFE);
+            int currentPosition = slideMotor.getCurrentPosition ();
+            double error = targetPosition - currentPosition;
+            double dt = loopTimer.seconds ();
+            if (dt < 0.001) {dt = 0.001;}
+            pid.setGains (RobotConstants.SLIDE_P, RobotConstants.SLIDE_I, RobotConstants.SLIDE_D);
+            double power = pid.update (error, dt);
+            slideMotor.setPower (power);
+            loopTimer.reset ();
+            double pTerm = pid.pTerm;
+            double iTerm = pid.iTerm;
+            double dTerm = pid.dTerm; 
+            telemetry.addData ("Target Position", targetPosition);
+            telemetry.addData ("Current Position", currentPosition);
+            telemetry.addData ("Error", error);
+            telemetry.addData ("Motor Power", "%.2f", power);
+            telemetry.addLine ();
+            telemetry.addData ("P Term", "%.2f", pTerm);
+            telemetry.addData ("I Term", "%.2f", iTerm);
+            telemetry.addData ("D Term", "%.2f", dTerm);
+            telemetry.update ();
+        }
     }
 }
 
 
 
-========== File: ./utils/PIDController.java ==========
+========== File: ./util/MathUtils.java ==========
+package org.firstinspires.ftc.teamcode.util;
+
+public final class MathUtils {
+    private MathUtils() {}
+
+    public static double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    public static int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    public static double deadband(double value, double threshold) {
+        return Math.abs(value) < threshold ? 0.0 : value;
+    }
+
+    public static boolean within(double value, double target, double tolerance) {
+        return Math.abs(value - target) <= tolerance;
+    }
+}
+
+
+
+========== File: ./util/DebouncedBoolean.java ==========
+package org.firstinspires.ftc.teamcode.util;
+
+public class DebouncedBoolean {
+    private boolean stableValue;
+    private double stableTime = 0;
+
+    public DebouncedBoolean(boolean initialValue) {
+        stableValue = initialValue;
+    }
+
+    public boolean update(boolean rawValue, double dt, double debounceTime) {
+        if (debounceTime <= 0) {
+            stableValue = rawValue;
+            stableTime = 0;
+            return stableValue;
+        }
+
+        if (rawValue == stableValue) {
+            stableTime = 0;
+            return stableValue;
+        }
+
+        stableTime += dt;
+        if (stableTime >= debounceTime) {
+            stableValue = rawValue;
+            stableTime = 0;
+        }
+
+        return stableValue;
+    }
+}
+
+
+
+========== File: ./util/PIDController.java ==========
 package org.firstinspires.ftc.teamcode.util;
 public class PIDController {
     private double kP, kI, kD;
@@ -78,7 +169,7 @@ public class PIDController {
 
 
 
-========== File: ./utils/HardwareNames.java ==========
+========== File: ./util/HardwareNames.java ==========
 package org.firstinspires.ftc.teamcode.util;
 public final class HardwareNames {
     private HardwareNames () {}
@@ -114,81 +205,6 @@ public final class HardwareNames {
     //Testing and vision
     public static final String TEST_CLAW = "test_claw";
     public static final String WEBCAM = "Main Cam";
-}
-
-
-
-========== File: ./S11_PIDLinearSlide.java ==========
-package org.firstinspires.ftc.teamcode;
-import org.firstinspires.ftc.teamcode.util.MathUtils;
-import org.firstinspires.ftc.teamcode.util.PIDController;
-import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.util.ElapsedTime;
-@TeleOp (name = "Test: PID Linear Slide", group = "S11: PID Control")
-public class S11_PIDLinearSlide extends LinearOpMode {
-    //Motors
-    private DcMotorEx slideMotor;
-    //PID control status
-    private PIDController pid;
-    private final ElapsedTime loopTimer = new ElapsedTime ();
-    @Override
-    public void runOpMode () {
-        //Initialize motor for sliding 
-        slideMotor = hardwareMap.get (DcMotorEx.class, "slide_motor");
-        //Configure motor, position control
-        slideMotor.setMode (DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        slideMotor.setMode (DcMotor.RunMode.RUN_WITHOUT_ENCODER); //PID manually
-        slideMotor.setZeroPowerBehavior (DcMotor.ZeroPowerBehavior.BRAKE);
-        slideMotor.setDirection (DcMotor.Direction.FORWARD);
-        //PID Init
-        pid = new PIDController (RobotConstants.SLIDE_P, RobotConstants.SLIDE_I, RobotConstants.SLIDE_D); 
-        pid.setIntegralClamp (RobotConstants.SLIDE_INTEGRAL_CLAMP);
-        pid.setOutputClamp (RobotConstants.SLIDE_OUTPUT_CLAMP);
-        //Setup telemetry
-        telemetry = new MultipleTelemetry (telemetry, FtcDashboard.getInstance ().getTelemetry ());
-        telemetry.addData ("Status", "PID Slide Ready");
-        telemetry.addData ("Instructions", "Use dpad up/down to set position");
-        telemetry.update ();
-        int targetPosition = 0;
-        waitForStart ();
-        loopTimer.reset ();
-        pid.reset ();
-        while (opModeIsActive ()) {
-            //Manual position control with dpad
-            if (gamepad1.dpad_up) {targetPosition = RobotConstants.SLIDE_SCORE_HIGH;} 
-            else if (gamepad1.dpad_down) {targetPosition = RobotConstants.SLIDE_GROUND;}
-            else if (gamepad1.dpad_left) {targetPosition = RobotConstants.SLIDE_LOW;}
-            else if (gamepad1.dpad_right) {targetPosition = RobotConstants.SLIDE_MAX_SAFE;}
-            targetPosition = MathUtils.clamp (targetPosition, RobotConstants.SLIDE_GROUND, RobotConstants.SLIDE_MAX_SAFE);
-            //PID Control Loop
-            int currentPosition = slideMotor.getCurrentPosition ();
-            double error = targetPosition - currentPosition;
-            double dt = loopTimer.seconds ();
-            if (dt < 0.001) {dt = 0.001;}
-            pid.setGains (RobotConstants.SLIDE_P, RobotConstants.SLIDE_I, RobotConstants.SLIDE_D);
-            double power = pid.update (error, dt);
-            slideMotor.setPower (power);
-            loopTimer.reset ();
-            double pTerm = pid.pTerm;
-            double iTerm = pid.iTerm;
-            double dTerm = pid.dTerm;
-            //Telemetry
-            telemetry.addData ("Target Position", targetPosition);
-            telemetry.addData ("Current Position", currentPosition);
-            telemetry.addData ("Error", error);
-            telemetry.addData ("Motor Power", "%.2f", power);
-            telemetry.addLine ();
-            telemetry.addData ("P Term", "%.2f", pTerm);
-            telemetry.addData ("I Term", "%.2f", iTerm);
-            telemetry.addData ("D Term", "%.2f", dTerm);
-            telemetry.update ();
-        }
-    }
 }
 
 
@@ -261,6 +277,108 @@ public class OTOSLocalizer implements Localizer {
         Vector2d robotVel = Rotation2d.exp(otosPose.h).inverse().times(fieldVel);
         return new PoseVelocity2d(robotVel, otosVel.h);
     }
+}
+
+
+
+========== File: ./CompetitionTeleOp.java ==========
+package org.firstinspires.ftc.teamcode;
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
+import org.firstinspires.ftc.teamcode.util.DebouncedBoolean;
+import org.firstinspires.ftc.teamcode.util.HardwareNames;
+import org.firstinspires.ftc.teamcode.util.MathUtils;
+@TeleOp (name = "Competition TeleOp", group = "Competition")
+public class CompetitionTeleOp extends LinearOpMode {
+    //Drivetrain
+    private DcMotor frontLeft;
+    private DcMotor frontRight;
+    private DcMotor backLeft;
+    private DcMotor backRight;
+    //Mechanisms
+    private S12_IntegratedMechanism mechanism;
+    //Hanging
+    private DcMotor winchMotor;
+    private DigitalChannel topLimitSwitch;
+    private final ElapsedTime loopTimer = new ElapsedTime ();
+    private final DebouncedBoolean topLimitDebounced = new DebouncedBoolean (false);
+    @Override
+    public void runOpMode () {
+        //Drivetrain hardware
+        frontLeft = hardwareMap.get (DcMotor.class, HardwareNames.FRONT_LEFT);
+        frontRight = hardwareMap.get (DcMotor.class, HardwareNames.FRONT_RIGHT);
+        backLeft = hardwareMap.get (DcMotor.class, HardwareNames.BACK_LEFT);
+        backRight = hardwareMap.get (DcMotor.class, HardwareNames.BACK_RIGHT);
+        frontLeft.setDirection (DcMotorSimple.Direction.REVERSE);
+        backLeft.setDirection (DcMotorSimple.Direction.REVERSE);
+        frontRight.setDirection (DcMotorSimple.Direction.FORWARD);
+        backRight.setDirection (DcMotorSimple.Direction.FORWARD);
+        //Mechanism Main hardware
+        DcMotorEx slide = hardwareMap.get (DcMotorEx.class, HardwareNames.SLIDE_MOTOR);
+        Servo intakeServo = hardwareMap.get (Servo.class, HardwareNames.INTAKE_SERVO);
+        DigitalChannel gamePieceSensor = hardwareMap.get (DigitalChannel.class, HardwareNames.GAME_PIECE_SENSOR);
+        DigitalChannel bottomLimit = hardwareMap.get (DigitalChannel.class, HardwareNames.BOTTOM_LIMIT);
+        mechanism = new S12_IntegratedMechanism ();
+        mechanism.init (slide, intakeServo, gamePieceSensor, bottomLimit);
+        //Hang hardware
+        winchMotor = hardwareMap.get (DcMotor.class, HardwareNames.WINCH_MOTOR);
+        topLimitSwitch = hardwareMap.get (DigitalChannel.class, HardwareNames.TOP_LIMIT);
+        topLimitSwitch.setMode (DigitalChannel.Mode.INPUT);
+        winchMotor.setZeroPowerBehavior (DcMotor.ZeroPowerBehavior.BRAKE);
+        winchMotor.setDirection (DcMotorSimple.Direction.FORWARD);
+        //Telemetry Outputs
+        telemetry = new MultipleTelemetry (telemetry, FtcDashboard.getInstance ().getTelemetry ());
+        telemetry.addData ("Status", "Competition TeleOp Ready");
+        telemetry.update ();
+        waitForStart ();
+        mechanism.resetControllers ();
+        loopTimer.reset ();
+        while (opModeIsActive ()) {
+            double dt = loopTimer.seconds ();
+            if (dt < 0.001) {dt = 0.001;}
+            //Drivetrain
+            double y = MathUtils.deadband (-gamepad1.left_stick_y, RobotConstants.DRIVE_STICK_DEADBAND);
+            double x = MathUtils.deadband (gamepad1.left_stick_x, RobotConstants.DRIVE_STICK_DEADBAND) * RobotConstants.DRIVE_MECANUM_STRAFE_COMPENSATION;
+            double rx = MathUtils.deadband (gamepad1.right_stick_x, RobotConstants.DRIVE_STICK_DEADBAND);
+            double denominator = Math.max (Math.abs (y) + Math.abs (x) + Math.abs (rx), 1);
+            double frontLeftPower = (y + x + rx) / denominator;
+            double frontRightPower = (y - x - rx) / denominator;
+            double backLeftPower = (y - x + rx) / denominator;
+            double backRightPower = (y + x - rx) / denominator;
+            frontLeft.setPower (frontLeftPower);
+            frontRight.setPower (frontRightPower);
+            backLeft.setPower (backLeftPower);
+            backRight.setPower (backRightPower);
+            //Mechanism controls
+            if (gamepad2.a) {mechanism.startIntakeSequence ();} 
+            else if (gamepad2.b) {mechanism.startScoreSequence ();} 
+            else if (gamepad2.x) {mechanism.emergencyStop ();}
+            //Hang controls
+            boolean topPressed = topLimitDebounced.update (limitPressed(topLimitSwitch.getState (), RobotConstants.SENSOR_LIMIT_SWITCH_INVERTED), dt, RobotConstants.SENSOR_LIMIT_SWITCH_DEBOUNCE_SECONDS);
+            if ((gamepad2.y) && (!topPressed)) {winchMotor.setPower(1.0);} 
+            else if (gamepad2.x) {winchMotor.setPower (-0.5);} 
+            else {winchMotor.setPower (0);}
+            //Mechanism update
+            TelemetryPacket packet = new TelemetryPacket ();
+            mechanism.update (packet);
+            FtcDashboard.getInstance ().sendTelemetryPacket (packet);
+            //Driver telemetry
+            telemetry.addData ("Mechanism State", mechanism.getState ());
+            telemetry.addData ("Top Limit Pressed", topPressed);
+            telemetry.addData ("Winch Power", winchMotor.getPower ());
+            telemetry.update ();
+            loopTimer.reset ();
+        }
+    } private boolean limitPressed (boolean raw, boolean inverted) {return inverted ? !raw : raw;}
 }
 
 
@@ -1355,31 +1473,23 @@ public class s2_hang_branch_endgame extends LinearOpMode {
     public void runOpMode () {
         winchMotor = hardwareMap.get (DcMotor.class, HardwareNames.WINCH_MOTOR);
         topLimitSwitch = hardwareMap.get (DigitalChannel.class, HardwareNames.TOP_LIMIT);
-        //Limit switches are usually closed when not pressed
         topLimitSwitch.setMode (DigitalChannel.Mode.INPUT);
-        //When power is cut, the motor brakes, no slide down
         winchMotor.setZeroPowerBehavior (DcMotor.ZeroPowerBehavior.BRAKE);
         winchMotor.setDirection (DcMotorSimple.Direction.FORWARD);
         telemetry.addData ("Status", "Operational-RDY");
         telemetry.update ();
         waitForStart ();
         while (opModeIsActive ()) {
-            while (opModeIsActive ()) {
-                double dt = loopTimer.seconds ();
-                if (dt < 0.001) {dt = 0.001;}
-                boolean topPressed = topLimitDebounced.update (limitPressed (topLimitSwitch.getState (), RobotConstants.SENSOR_LIMIT_SWITCH_INVERTED), dt, RobotConstants.SENSOR_LIMIT_SWITCH_DEBOUNCE_SECONDS);
-                loopTimer.reset();
-                //Winch Control
-                //Y: Winch upwards to hang
-                //X: Lower Winch
-                //SAFETY CHECK: If the limit switch is pressed, cease pulling up
-                if ((gamepad2.y) && (!topPressed)) {winchMotor.setPower (1.0);} //Full power to lift 
-                else if (gamepad2.x) {winchMotor.setPower (-0.5);} //Slower power to lower 
-                else {winchMotor.setPower (0);} //Hold position
-                telemetry.addData ("Limit Switch Pressed", topPressed);
-                telemetry.addData ("Winch Power", winchMotor.getPower ());
-                telemetry.update ();
-            }
+            double dt = loopTimer.seconds ();
+            if (dt < 0.001) {dt = 0.001;}
+            boolean topPressed = topLimitDebounced.update (limitPressed (topLimitSwitch.getState (), RobotConstants.SENSOR_LIMIT_SWITCH_INVERTED), dt,RobotConstants.SENSOR_LIMIT_SWITCH_DEBOUNCE_SECONDS);
+            loopTimer.reset ();
+            if ((gamepad2.y) && (!topPressed)) {winchMotor.setPower (1.0);} 
+            else if (gamepad2.x) {winchMotor.setPower (-0.5);} 
+            else {winchMotor.setPower (0);}
+            telemetry.addData ("Limit Switch Pressed", topPressed);
+            telemetry.addData ("Winch Power", winchMotor.getPower ());
+            telemetry.update ();
         }
     } private boolean limitPressed (boolean raw, boolean inverted) {return inverted ? !raw : raw;}
 }
@@ -1446,9 +1556,9 @@ public class S6_ParallelAuto extends LinearOpMode {
 
 ========== File: ./S8_AprilTagVision.java ==========
 package org.firstinspires.ftc.teamcode;
+import org.firstinspires.ftc.teamcode.util.HardwareNames;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.vision.VisionPortal;
@@ -1504,10 +1614,37 @@ public class S8_AprilTagVision extends LinearOpMode {
         VisionPortal.Builder builder = new VisionPortal.Builder ();
         //Webcam
         if (hardwareMap.getAll (WebcamName.class).isEmpty ()) {builder.setCamera (BuiltinCameraDirection.BACK);} 
-        else {builder.setCamera (hardwareMap.get (WebcamName.class, "Main Cam"));}
+        else {builder.setCamera (hardwareMap.get(WebcamName.class, HardwareNames.WEBCAM));}
         builder.addProcessor (aprilTag);
         visionPortal = builder.build ();
     }
+}
+
+
+
+========== File: ./HangSubsystem.java ==========
+package org.firstinspires.ftc.teamcode;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
+import org.firstinspires.ftc.teamcode.util.DebouncedBoolean;
+public class HangSubsystem {
+    private DcMotor winchMotor;
+    private DigitalChannel topLimitSwitch;
+    private final DebouncedBoolean topLimitDebounced = new DebouncedBoolean (false);
+    public void init(DcMotor winch, DigitalChannel topLimit) {
+        winchMotor = winch;
+        topLimitSwitch = topLimit;
+        topLimitSwitch.setMode (DigitalChannel.Mode.INPUT);
+        winchMotor.setZeroPowerBehavior (DcMotor.ZeroPowerBehavior.BRAKE);
+        winchMotor.setDirection (DcMotorSimple.Direction.FORWARD);
+    } public void update (double dt, boolean raiseRequested, boolean lowerRequested) {
+        boolean topPressed = topLimitDebounced.update (limitPressed (topLimitSwitch.getState (), RobotConstants.SENSOR_LIMIT_SWITCH_INVERTED), dt, RobotConstants.SENSOR_LIMIT_SWITCH_DEBOUNCE_SECONDS);
+        if ((raiseRequested) && (!topPressed)) {winchMotor.setPower (1.0);} 
+        else if (lowerRequested) {winchMotor.setPower (-0.5);} 
+        else {winchMotor.setPower (0);}
+    } public double getPower () {return winchMotor.getPower ();}
+    private boolean limitPressed (boolean raw, boolean inverted) {return inverted ? !raw : raw;}
 }
 
 
@@ -1661,6 +1798,7 @@ public final class TwoDeadWheelLocalizer implements Localizer {
 
 ========== File: ./S7_StateMachineHopper.java ==========
 package org.firstinspires.ftc.teamcode;
+import org.firstinspires.ftc.teamcode.util.HardwareNames;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
@@ -1729,8 +1867,8 @@ public class S7_StateMachineHopper {
         @Override
         public void runOpMode () {
             S7_StateMachineHopper hopper = new S7_StateMachineHopper ();
-            DcMotor intake = hardwareMap.get (DcMotor.class, "intake_motor");
-            Servo dump = hardwareMap.get (Servo.class, "dump_servo");
+            DcMotor intake = hardwareMap.get(DcMotor.class, HardwareNames.INTAKE_MOTOR);
+            Servo dump = hardwareMap.get(Servo.class, HardwareNames.DUMP_SERVO);
             hopper.init (intake, dump);
             telemetry = new MultipleTelemetry (telemetry, FtcDashboard.getInstance ().getTelemetry ());
             telemetry.addData ("Status", "RDY");
@@ -1786,30 +1924,38 @@ public interface Localizer {
 
 ========== File: ./RobotConstants.java ==========
 package org.firstinspires.ftc.teamcode;
+
 import com.acmerobotics.dashboard.config.Config;
+
 @Config
 public class RobotConstants {
-    //Drive
+    // Drive
     public static double DRIVE_MECANUM_STRAFE_COMPENSATION = 1.1;
     public static double DRIVE_STICK_DEADBAND = 0.05;
     public static double DRIVE_TRIGGER_DEADBAND = 0.1;
     public static double DRIVE_TICKS_PER_INCH = 38.2;
-    //Servos
+
+    // Servos
     public static double SERVO_CLAW_OPEN = 0.8;
     public static double SERVO_CLAW_CLOSED = 0.2;
+
     public static double SERVO_INTAKE_OPEN = 0.82;
     public static double SERVO_INTAKE_CLOSED = 0.35;
+
     public static double SERVO_DUMP_STOWED = 0.10;
     public static double SERVO_DUMP_ACTIVE = 0.90;
+
     public static double SERVO_WRIST_PICKUP = 0.8;
     public static double SERVO_WRIST_SCORE = 0.2;
-    //Slide PID
+
+    // Slide PID
     public static double SLIDE_P = 10.0;
     public static double SLIDE_I = 0.5;
     public static double SLIDE_D = 1.0;
     public static double SLIDE_INTEGRAL_CLAMP = 1000.0;
     public static double SLIDE_OUTPUT_CLAMP = 1.0;
-    //Slide positions
+
+    // Slide positions
     public static int SLIDE_GROUND = 0;
     public static int SLIDE_LOW = 500;
     public static int SLIDE_INTAKE = 500;
@@ -1817,12 +1963,14 @@ public class RobotConstants {
     public static int SLIDE_SCORE_HIGH = 1500;
     public static int SLIDE_MAX_SAFE = 1900;
     public static int SLIDE_POSITION_TOLERANCE = 50;
-    //Sensors
+
+    // Sensors
     public static double SENSOR_GAME_PIECE_DISTANCE_CM = 5.0;
     public static boolean SENSOR_LIMIT_SWITCH_INVERTED = true;
     public static boolean SENSOR_GAME_PIECE_INVERTED = false;
     public static double SENSOR_LIMIT_SWITCH_DEBOUNCE_SECONDS = 0.05;
-    //Timing Belt
+
+    // Timing
     public static double TIMING_SCORE_HOLD_SECONDS = 1.0;
     public static double TIMING_DUMP_SECONDS = 1.0;
     public static double TIMING_INTAKE_FILL_SECONDS = 1.5;
@@ -1832,6 +1980,7 @@ public class RobotConstants {
 
 ========== File: ./S10_SensorHopper.java ==========
 package org.firstinspires.ftc.teamcode;
+import org.firstinspires.ftc.teamcode.util.HardwareNames;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
@@ -1877,7 +2026,7 @@ public class S10_SensorHopper {
     private boolean atTopLimit () {
         boolean raw = topLimitSwitch.getState ();
         return RobotConstants.SENSOR_LIMIT_SWITCH_INVERTED ? !raw : raw;
-    } // Most limit switches are inverted}
+    } //Most limit switches are inverted
     //Command: Start intaking
     public void startIntake () {
         requireInitialised ();
@@ -1968,6 +2117,7 @@ public class S10_SensorHopper {
 
 ========== File: ./S12_IntegratedMechanism.java ==========
 package org.firstinspires.ftc.teamcode;
+import org.firstinspires.ftc.teamcode.util.HardwareNames;
 import org.firstinspires.ftc.teamcode.util.MathUtils;
 import org.firstinspires.ftc.teamcode.util.PIDController;
 import com.acmerobotics.dashboard.FtcDashboard;
@@ -2104,10 +2254,10 @@ public class S12_IntegratedMechanism {
         @Override
         public void runOpMode () {
             S12_IntegratedMechanism mech = new S12_IntegratedMechanism ();
-            DcMotorEx slide = hardwareMap.get (DcMotorEx.class, "slide_motor");
-            Servo intake = hardwareMap.get (Servo.class, "intake_servo");
-            DigitalChannel sensor = hardwareMap.get (DigitalChannel.class, "game_piece_sensor");
-            DigitalChannel limit = hardwareMap.get (DigitalChannel.class, "bottom_limit");
+            DcMotorEx slide = hardwareMap.get(DcMotorEx.class, HardwareNames.SLIDE_MOTOR);
+            Servo intake = hardwareMap.get(Servo.class, HardwareNames.INTAKE_SERVO);
+            DigitalChannel sensor = hardwareMap.get(DigitalChannel.class, HardwareNames.GAME_PIECE_SENSOR);
+            DigitalChannel limit = hardwareMap.get(DigitalChannel.class, HardwareNames.BOTTOM_LIMIT);
             mech.init (slide, intake, sensor, limit);
             telemetry = new MultipleTelemetry (telemetry, FtcDashboard.getInstance ().getTelemetry ());
             telemetry.addData ("Status", "RDY");
@@ -2121,7 +2271,8 @@ public class S12_IntegratedMechanism {
                 else if (gamepad1.x) {mech.emergencyStop ();}
                 //Update Runtime Mechanism
                 TelemetryPacket packet = new TelemetryPacket ();
-                FtcDashboard.getInstance ().sendTelemetryPacket (packet);
+            mech.update (packet);
+            FtcDashboard.getInstance ().sendTelemetryPacket (packet);
                 telemetry.addData ("State", mech.getState ());
                 telemetry.update ();
             }
@@ -2157,29 +2308,37 @@ public final class Drawing {
 
 
 
+========== File: ./RobotReadiness.java ==========
+package org.firstinspires.ftc.teamcode;
+public final class RobotReadiness {
+    private RobotReadiness () {}
+    public static final boolean DRIVE_READY = true;
+    public static final boolean SLIDE_READY = false;
+    public static final boolean HOPPER_READY = false;
+    public static final boolean HANG_READY = false;
+    public static final boolean VISION_READY = false;
+}
+
+
+
 ========== File: ./S6_PollenHopper.java ==========
 package org.firstinspires.ftc.teamcode;
-import com.acmerobotics.roadrunner.ftc.actions;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
-//This class represents physical mechanisms
+import com.acmerobotics.roadrunner.Actions;
+//This class represents physical mechanisms.
 public class S6_PollenHopper {
-    //Todo: Read Hardware Field Integration and Init before enabling proper hardware stack
-    //Initialize motors and servos here
-    //Turn the intake ON
+    //Todo, add real hardware fields and init () before enabling hardware commands.
     public Action startIntake () {
         return new Action () {
             @Override
             public boolean run (TelemetryPacket packet) {
                 //intakeMotor.setPower (1.0);
                 packet.put ("Hopper", "Intake Online");
-                //Return false as we need "turn on" command only once.
-                //The motor will keep spinning in the background.
-                return false; 
+                return false;
             }
         };
-    } //Turn intake OFF
-    public Action stopIntake () {
+    } public Action stopIntake () {
         return new Action () {
             @Override
             public boolean run (TelemetryPacket packet) {
@@ -2188,8 +2347,7 @@ public class S6_PollenHopper {
                 return false;
             }
         };
-    } //Wait for the hopper to fill up (Time determined in total)
-    public Action waitForFill (double seconds) {
+    } public Action waitForFill (double seconds) {
         return new Action () {
             private double startTime = -1;
             @Override
@@ -2197,13 +2355,10 @@ public class S6_PollenHopper {
                 if (startTime < 0) {startTime = Actions.now ();}
                 double elapsed = Actions.now () - startTime;
                 packet.put ("Fill Timer", elapsed);
-                //Return true to keep running until the time is up.
-                //While this returns true, the robot will not execute downstream sequential actions
-                return elapsed < seconds; 
+                return elapsed < seconds;
             }
         };
-    } //Dump the hopper
-    public Action dumpHopper () {
+    } public Action dumpHopper () {
         return new Action () {
             private double startTime = -1;
             @Override
@@ -2213,12 +2368,11 @@ public class S6_PollenHopper {
                     //dumpServo.setPosition (RobotConstants.SERVO_DUMP_ACTIVE);
                     packet.put ("Hopper", "Dumping");
                 } double elapsed = Actions.now () - startTime;
-                //Give the servo 1 second to dump pollen
-                if (elapsed < RobotConstants.TIMING_DUMP_SECONDS) {return true;} //Keep waiting until times up 
+                if (elapsed < RobotConstants.TIMING_DUMP_SECONDS) {return true;} 
                 else {
-                    //dumpServo.setPosition (0.1); to put back up
+                    //dumpServo.setPosition (RobotConstants.SERVO_DUMP_STOWED);
                     packet.put ("Hopper", "Stowed");
-                    return false; //Done dumping all pollen objects
+                    return false;
                 }
             }
         };
@@ -2272,6 +2426,8 @@ public class s2_pollen_hopper extends LinearOpMode {
 
 ========== File: ./MecanumDrive.java ==========
 package org.firstinspires.ftc.teamcode;
+
+import org.firstinspires.ftc.teamcode.util.HardwareNames;
 import androidx.annotation.NonNull;
 import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.dashboard.config.Config;
@@ -2689,10 +2845,10 @@ public final class MecanumDrive {
                     voltage, leftFrontPower, leftBackPower, rightBackPower, rightFrontPower
             ));
 
-            leftFront.setPower(feedforward.compute(wheelVels.leftFront) / voltage);
-            leftBack.setPower(feedforward.compute(wheelVels.leftBack) / voltage);
-            rightBack.setPower(feedforward.compute(wheelVels.rightBack) / voltage);
-            rightFront.setPower(feedforward.compute(wheelVels.rightFront) / voltage);
+            leftFront.setPower(leftFrontPower);
+                leftBack.setPower(leftBackPower);
+                rightBack.setPower(rightBackPower);
+                rightFront.setPower(rightFrontPower);
 
             Canvas c = p.fieldOverlay();
             drawPoseHistory(c);
@@ -2866,40 +3022,35 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import java.util.List;
 @Disabled
-@Autonomous(name = "Complete Autonomous", group = "S9: Full System", preselectTeleOp = "TeleOp: Default")
+@Autonomous (name = "Complete Autonomous", group = "S9: Full System")
 public class S9_CompleteAutonomous extends LinearOpMode {
     private AprilTagProcessor aprilTag;
     private VisionPortal visionPortal;
     private S7_StateMachineHopper hopper;
-    //Target positions for movements (in inches)
     private static final double INTAKE_X = 24;
     private static final double INTAKE_Y = 0;
     private static final double SCORING_X = 48;
     private static final double SCORING_Y = 24;
+    private static double rrNow () {return com.acmerobotics.roadrunner.Actions.now ();}
     @Override
     public void runOpMode () throws InterruptedException {
-        //Init all
         Pose2d startPose = new Pose2d (0, 0, 0);
         MecanumDrive drive = new MecanumDrive (hardwareMap, startPose);
         DcMotor intake = hardwareMap.get (DcMotor.class, HardwareNames.INTAKE_MOTOR);
         Servo dump = hardwareMap.get (Servo.class, HardwareNames.DUMP_SERVO);
         hopper = new S7_StateMachineHopper ();
         hopper.init (intake, dump);
-        //Initialize vision
         initVision ();
         telemetry.addData ("Status", "Operational");
         telemetry.addData ("Target Tag", "ID 5");
         telemetry.update ();
         waitForStart ();
         if (isStopRequested ()) {return;}
-        //Detect AprilTag to determine scoring position
         int targetTagId = detectTargetTag ();
         telemetry.addData ("Detected Tag", targetTagId);
         telemetry.update ();
-        //Drive to intake while starting intake mechanism
         Actions.runBlocking (
             new SequentialAction (
-                //Drive to intake position AND start intake simultaneously
                 new ParallelAction (
                     drive.actionBuilder (startPose)
                         .splineTo (new Vector2d (INTAKE_X, INTAKE_Y), Math.PI / 4)
@@ -2909,38 +3060,34 @@ public class S9_CompleteAutonomous extends LinearOpMode {
                         public boolean run (TelemetryPacket packet) {
                             hopper.startIntake ();
                             packet.put ("Phase", "Dual Intake-Drivetrain");
-                            return false; //Run once, then proceed to next actions
+                            return false;
                         }
                     }
-                ), //Wait for hopper to fill completely (tracked by state machine)
-                new Action () {
+                ), new Action () {
                     private double startTime = -1;
                     @Override
                     public boolean run (TelemetryPacket packet) {
-                        if (startTime < 0) {startTime = Actions.now ();}
-                        double elapsed = Actions.now () - startTime;
+                        if (startTime < 0) {startTime = rrNow ();}
+                        double elapsed = rrNow () - startTime;
                         packet.put ("Phase", "Waiting for completed fill");
                         packet.put ("Filling Time Taken", elapsed);
-                        //Simulate filling for a timed number of seconds
                         if (elapsed > RobotConstants.TIMING_INTAKE_FILL_SECONDS) {
                             hopper.stopIntake ();
                             return false;
                         } return true;
                     }
-                }, //Drive to scoring position
-                drive.actionBuilder (new Pose2d (INTAKE_X, INTAKE_Y, 0))
+                }, drive.actionBuilder (new Pose2d(INTAKE_X, INTAKE_Y, 0))
                     .splineTo (new Vector2d (SCORING_X, SCORING_Y), Math.PI / 2)
                     .build (),
-                //Dump pollen
-                new Action () {
+                new Action() {
                     private double startTime = -1;
                     @Override
                     public boolean run (TelemetryPacket packet) {
                         if (startTime < 0) {
-                            startTime = Actions.now ();
+                            startTime = rrNow ();
                             hopper.startDump ();
                             packet.put ("Phase", "Dumping Pollen");
-                        } double elapsed = Actions.now () - startTime;
+                        } double elapsed = rrNow () - startTime;
                         if (elapsed > RobotConstants.TIMING_DUMP_SECONDS) {
                             hopper.finishDump ();
                             packet.put ("Phase", "Dumping Completed");
@@ -2953,23 +3100,19 @@ public class S9_CompleteAutonomous extends LinearOpMode {
         telemetry.update ();
         sleep (2000);
     } private int detectTargetTag () {
-        //Look for AprilTags for 3 seconds
         double startTime = System.currentTimeMillis ();
         while ((opModeIsActive ()) && ((System.currentTimeMillis () - startTime) < 3000)) {
             List<AprilTagDetection> detections = aprilTag.getDetections ();
-            for (AprilTagDetection detection : detections) {
-                //Different tags might indicate different scoring positions
-                if ((detection.id >= 1) && (detection.id <= 10)) {return detection.id;}
-            } sleep (100);
-        } //Default to tag 5 if no tags detected
-        return 5;
+            for (AprilTagDetection detection : detections) {if ((detection.id >= 1) && (detection.id <= 10)) {return detection.id;}}
+            sleep (100);
+        } return 5;
     } private void initVision () {
         aprilTag = new AprilTagProcessor.Builder ()
             .setDrawAxes (true)
             .setDrawCubeProjection (true)
             .build ();
         VisionPortal.Builder builder = new VisionPortal.Builder ();
-        if (hardwareMap.getAll (WebcamName.class).isEmpty ()) {builder.setCamera (BuiltinCameraDirection.BACK);} 
+        if (hardwareMap.getAll (WebcamName.class).isEmpty ()) {builder.setCamera(BuiltinCameraDirection.BACK);} 
         else {builder.setCamera (hardwareMap.get (WebcamName.class, HardwareNames.WEBCAM));}
         builder.addProcessor (aprilTag);
         visionPortal = builder.build ();
@@ -3125,7 +3268,7 @@ public class S4_SimpleAuto extends LinearOpMode {
         while ((opModeIsActive ()) && (runtime.seconds () < 5.0) && ((frontLeft.isBusy ()) || (frontRight.isBusy ()) || (backLeft.isBusy ()) || (backRight.isBusy ()))) {
             telemetry.addData ("Driving", "Forward %.1f inches", inches);
             telemetry.update ();
-        }
+        } stopMotors ();
     } private void strafeRight(double inches, double power) {
         int targetTicks = (int) (inches * RobotConstants.DRIVE_TICKS_PER_INCH);
         frontLeft.setTargetPosition (frontLeft.getCurrentPosition () + targetTicks);
@@ -3141,7 +3284,7 @@ public class S4_SimpleAuto extends LinearOpMode {
         backLeft.setPower (power);
         backRight.setPower (power);
         runtime.reset ();
-        while (opModeIsActive () && runtime.seconds () < 5.0 && ((frontLeft.isBusy ()) || (frontRight.isBusy ()) || (backLeft.isBusy ()) || (backRight.isBusy ()))) {
+        while ((opModeIsActive ()) && (runtime.seconds () < 5.0) && ((frontLeft.isBusy ()) || (frontRight.isBusy ()) || (backLeft.isBusy ()) || (backRight.isBusy ()))) {
             telemetry.addData ("Strafing", "Right %.1f inches", inches);
             telemetry.update ();
         } stopMotors ();
@@ -3154,6 +3297,38 @@ public class S4_SimpleAuto extends LinearOpMode {
         frontRight.setMode (DcMotor.RunMode.RUN_USING_ENCODER);
         backLeft.setMode (DcMotor.RunMode.RUN_USING_ENCODER);
         backRight.setMode (DcMotor.RunMode.RUN_USING_ENCODER);
+    }
+}
+
+
+
+========== File: ./CompetitionAuto.java ==========
+package org.firstinspires.ftc.teamcode;
+import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.Vector2d;
+import com.acmerobotics.roadrunner.ftc.Actions;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+@Disabled
+@Autonomous (name = "Competition Auto", group = "Competition")
+public class CompetitionAuto extends LinearOpMode {
+    @Override
+    public void runOpMode () throws InterruptedException {
+        Pose2d startPose = new Pose2d (0, 0, 0);
+        MecanumDrive drive = new MecanumDrive (hardwareMap, startPose);
+        //Todo, initialize real mechanism here
+        telemetry.addData ("Status", "Competition Auto Ready");
+        telemetry.update ();
+        waitForStart ();
+        if (isStopRequested ()) {return;}
+        Actions.runBlocking (
+            drive.actionBuilder (startPose)
+                .lineToX (24)
+                .turn (Math.toRadians (90))
+                .lineToY (24)
+                .build ()
+        ); // Todo, Intake, Scoring, Parking
     }
 }
 

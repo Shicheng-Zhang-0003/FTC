@@ -1,13 +1,10 @@
 package org.firstinspires.ftc.teamcode;
-
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import org.firstinspires.ftc.teamcode.util.HardwareNames;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
-@Disabled
 @Autonomous (name = "Auto: Simple Square", group = "S4: Auto")
 public class S4_SimpleAuto extends LinearOpMode {
     private DcMotor frontLeft, frontRight, backLeft, backRight;

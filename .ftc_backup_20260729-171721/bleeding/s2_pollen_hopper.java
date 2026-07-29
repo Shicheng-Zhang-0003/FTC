@@ -1,13 +1,10 @@
 package org.firstinspires.ftc.teamcode;
-
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.teamcode.util.HardwareNames;
-@Disabled
 @TeleOp (name = "Pollen Hopper", group = "Mechanisms")
 public class s2_pollen_hopper extends LinearOpMode {
     private DcMotor intakeRoller;

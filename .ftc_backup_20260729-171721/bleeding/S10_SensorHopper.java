@@ -1,6 +1,4 @@
 package org.firstinspires.ftc.teamcode;
-
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import org.firstinspires.ftc.teamcode.util.HardwareNames;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
@@ -100,7 +98,6 @@ public class S10_SensorHopper {
                 break;
         }
     } //TeleOp test mode
-    @Disabled
     @TeleOp(name = "Test: Sensor Hopper", group = "S10: Sensors")
     public static class TestSensorHopper extends LinearOpMode {
         @Override
