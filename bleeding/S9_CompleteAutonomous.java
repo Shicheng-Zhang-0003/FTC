@@ -39,7 +39,7 @@ public class S9_CompleteAutonomous extends LinearOpMode {
         hopper.init (intake, dump);
         initVision ();
         telemetry.addData ("Status", "Operational");
-        telemetry.addData ("Target Tag", "ID 5");
+        telemetry.addData ("Target Tag", "Looking for ID 5");
         telemetry.update ();
         waitForStart ();
         if (isStopRequested ()) {return;}
@@ -100,9 +100,9 @@ public class S9_CompleteAutonomous extends LinearOpMode {
         double startTime = System.currentTimeMillis ();
         while ((opModeIsActive ()) && ((System.currentTimeMillis () - startTime) < 3000)) {
             List<AprilTagDetection> detections = aprilTag.getDetections ();
-            for (AprilTagDetection detection : detections) {if ((detection.id >= 1) && (detection.id <= 10)) {return detection.id;}}
+            for (AprilTagDetection detection : detections) {if (detection.id == 5) {return detection.id;}}
             sleep (100);
-        } return 5;
+        } return -1;
     } private void initVision () {
         aprilTag = new AprilTagProcessor.Builder ()
             .setDrawAxes (true)

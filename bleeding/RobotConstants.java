@@ -27,7 +27,7 @@ public class RobotConstants {
     public static double SLIDE_P = 10.0;
     public static double SLIDE_I = 0.5;
     public static double SLIDE_D = 1.0;
-    public static double SLIDE_INTEGRAL_CLAMP = 1000.0;
+    public static double SLIDE_INTEGRAL_CLAMP = 2.0;
     public static double SLIDE_OUTPUT_CLAMP = 1.0;
 
     // Slide positions

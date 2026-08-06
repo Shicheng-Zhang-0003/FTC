@@ -46,7 +46,7 @@ public class S11_PIDLinearSlide extends LinearOpMode {
             double dt = loopTimer.seconds ();
             if (dt < 0.001) {dt = 0.001;}
             pid.setGains (RobotConstants.SLIDE_P, RobotConstants.SLIDE_I, RobotConstants.SLIDE_D);
-            double power = pid.update (error, dt);
+            double power = pid.update (error, currentPosition, dt);
             slideMotor.setPower (power);
             loopTimer.reset ();
             double pTerm = pid.pTerm;

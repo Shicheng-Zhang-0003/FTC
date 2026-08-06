@@ -43,8 +43,8 @@ public class CompetitionAuto extends LinearOpMode {
                 ), MechanismActions.waitForAnyState (
                     mechanism,
                     2.0,
-                    S12_IntegratedMechanism.State.INTAKING,
-                    S12_IntegratedMechanism.State.IDLE
+                    S12_IntegratedMechanism.State.FILLED,
+                    S12_IntegratedMechanism.State.CLOSING_CLAW
                 ), MechanismActions.driveWithUpdates (
                     drive.actionBuilder (intakePose)
                         .lineToY (48)

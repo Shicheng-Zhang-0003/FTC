@@ -17,10 +17,13 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class S12_IntegratedMechanism {
+
     public enum State {
         IDLE,
         MOVING_TO_INTAKE,
         INTAKING,
+        CLOSING_CLAW,
+        FILLED,
         MOVING_TO_SCORE,
         SCORING,
         ERROR
@@ -34,9 +37,15 @@ public class S12_IntegratedMechanism {
     private DigitalChannel bottomLimit;
 
     private int targetPosition = 0;
+    private boolean hasPiece = false;
+    private boolean lastBottomPressed = false;
+
     private PIDController pid;
     private final ElapsedTime pidTimer = new ElapsedTime();
     private final ElapsedTime stateTimer = new ElapsedTime();
+
+    private static final double MOVING_TIMEOUT_SECONDS = 3.0;
+    private static final double SERVO_SETTLE_SECONDS = 0.25;
 
     public void init(DcMotorEx slide, Servo intake, DigitalChannel sensor, DigitalChannel limit) {
         slideMotor = slide;
@@ -64,17 +73,23 @@ public class S12_IntegratedMechanism {
         pidTimer.reset();
         pid.reset();
         stateTimer.reset();
-
         currentState = State.IDLE;
+        hasPiece = false;
+        lastBottomPressed = atBottom();
     }
 
     public State getState() {
         return currentState;
     }
 
+    public boolean hasPiece() {
+        return hasPiece;
+    }
+
     public void resetControllers() {
         pidTimer.reset();
         pid.reset();
+        stateTimer.reset();
     }
 
     private void setTargetPosition(int target) {
@@ -106,7 +121,6 @@ public class S12_IntegratedMechanism {
     private void updatePID() {
         int currentPosition = slideMotor.getCurrentPosition();
         double error = targetPosition - currentPosition;
-
         double dt = pidTimer.seconds();
         if (dt < 0.001) dt = 0.001;
 
@@ -116,9 +130,8 @@ public class S12_IntegratedMechanism {
             RobotConstants.SLIDE_D
         );
 
-        double power = pid.update(error, dt);
+        double power = pid.update(error, currentPosition, dt);
         slideMotor.setPower(power);
-
         pidTimer.reset();
     }
 
@@ -127,37 +140,73 @@ public class S12_IntegratedMechanism {
             currentState = State.MOVING_TO_INTAKE;
             setTargetPosition(RobotConstants.SLIDE_INTAKE);
             intakeServo.setPosition(RobotConstants.SERVO_INTAKE_OPEN);
+            stateTimer.reset();
         }
     }
 
     public void startScoreSequence() {
-        if ((currentState == State.IDLE) || (currentState == State.INTAKING)) {
+        if ((currentState == State.FILLED) || (currentState == State.IDLE)) {
             currentState = State.MOVING_TO_SCORE;
             setTargetPosition(RobotConstants.SLIDE_SCORE_HIGH);
+            stateTimer.reset();
         }
     }
 
     public void emergencyStop() {
+        targetPosition = slideMotor.getCurrentPosition();
         slideMotor.setPower(0);
         intakeServo.setPosition(RobotConstants.SERVO_INTAKE_CLOSED);
+        pid.reset();
+        pidTimer.reset();
         currentState = State.IDLE;
+        hasPiece = false;
     }
 
     public void update(TelemetryPacket packet) {
+
+        boolean bottomNow = atBottom();
+        if (bottomNow && !lastBottomPressed) {
+            slideMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            slideMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            slideMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            if (targetPosition <= RobotConstants.SLIDE_LOW) {
+                targetPosition = RobotConstants.SLIDE_GROUND;
+            }
+            pid.reset();
+            pidTimer.reset();
+            packet.put("Safety", "Bottom limit hit - encoder re-zeroed");
+        }
+        lastBottomPressed = bottomNow;
+
         updatePID();
 
         switch (currentState) {
+
             case MOVING_TO_INTAKE:
                 if (atTargetPosition()) {
                     currentState = State.INTAKING;
+                } else if (stateTimer.seconds() > MOVING_TIMEOUT_SECONDS) {
+                    currentState = State.ERROR;
+                    packet.put("Error", "MOVING_TO_INTAKE timeout");
                 }
                 break;
 
             case INTAKING:
                 if (hasGamePiece()) {
                     intakeServo.setPosition(RobotConstants.SERVO_INTAKE_CLOSED);
-                    currentState = State.IDLE;
+                    currentState = State.CLOSING_CLAW;
+                    stateTimer.reset();
                 }
+                break;
+
+            case CLOSING_CLAW:
+                if (stateTimer.seconds() >= SERVO_SETTLE_SECONDS) {
+                    hasPiece = true;
+                    currentState = State.FILLED;
+                }
+                break;
+
+            case FILLED:
                 break;
 
             case MOVING_TO_SCORE:
@@ -165,6 +214,9 @@ public class S12_IntegratedMechanism {
                     currentState = State.SCORING;
                     intakeServo.setPosition(RobotConstants.SERVO_INTAKE_OPEN);
                     stateTimer.reset();
+                } else if (stateTimer.seconds() > MOVING_TIMEOUT_SECONDS) {
+                    currentState = State.ERROR;
+                    packet.put("Error", "MOVING_TO_SCORE timeout");
                 }
                 break;
 
@@ -172,23 +224,24 @@ public class S12_IntegratedMechanism {
                 if (stateTimer.seconds() >= RobotConstants.TIMING_SCORE_HOLD_SECONDS) {
                     intakeServo.setPosition(RobotConstants.SERVO_INTAKE_CLOSED);
                     setTargetPosition(RobotConstants.SLIDE_GROUND);
+                    hasPiece = false;
                     currentState = State.IDLE;
                 }
+                break;
+
+            case ERROR:
                 break;
 
             default:
                 break;
         }
 
-        if (atBottom() && targetPosition < RobotConstants.SLIDE_GROUND) {
-            setTargetPosition(RobotConstants.SLIDE_GROUND);
-            packet.put("Safety", "Bottom Extension Limit");
-        }
-
         packet.put("State", currentState.toString());
         packet.put("Target Pos", targetPosition);
         packet.put("Current Pos", slideMotor.getCurrentPosition());
-        packet.put("Has Piece", hasGamePiece());
+        packet.put("Has Piece", hasPiece);
+        packet.put("Game Piece Sensor", hasGamePiece());
+        packet.put("At Bottom", atBottom());
     }
 
     @Disabled
@@ -197,7 +250,6 @@ public class S12_IntegratedMechanism {
         @Override
         public void runOpMode() {
             S12_IntegratedMechanism mech = new S12_IntegratedMechanism();
-
             DcMotorEx slide = hardwareMap.get(DcMotorEx.class, HardwareNames.SLIDE_MOTOR);
             Servo intake = hardwareMap.get(Servo.class, HardwareNames.INTAKE_SERVO);
             DigitalChannel sensor = hardwareMap.get(DigitalChannel.class, HardwareNames.GAME_PIECE_SENSOR);
@@ -210,7 +262,6 @@ public class S12_IntegratedMechanism {
             telemetry.update();
 
             waitForStart();
-
             mech.resetControllers();
 
             while (opModeIsActive()) {
@@ -227,6 +278,7 @@ public class S12_IntegratedMechanism {
                 FtcDashboard.getInstance().sendTelemetryPacket(packet);
 
                 telemetry.addData("State", mech.getState());
+                telemetry.addData("Has Piece", mech.hasPiece());
                 telemetry.update();
             }
         }
