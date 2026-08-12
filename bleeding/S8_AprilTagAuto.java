@@ -5,6 +5,8 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import org.firstinspires.ftc.teamcode.util.HardwareNames;
+import org.firstinspires.ftc.teamcode.util.AprilTagFieldTransform;
+import com.acmerobotics.roadrunner.Vector2d;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.vision.VisionPortal;
@@ -46,7 +48,13 @@ public class S8_AprilTagAuto extends LinearOpMode {
             telemetry.addData ("Alignment xOffset", xOffset);
             telemetry.addData ("Alignment yOffset", yOffset);
             telemetry.addData ("Alignment headingError", headingError);
-            telemetry.addLine ("Todo, convert camera-relative offsets to field-relative correction before moving.");
+            //Apply correction using AprilTagFieldTransform
+Vector2d alignVec = AprilTagFieldTransform.getAlignmentVector (targetTag);
+double headingErr = AprilTagFieldTransform.getHeadingError (targetTag);
+telemetry.addData ("Align Forward (in)", alignVec.x);
+telemetry.addData ("Align Strafe (in)", alignVec.y);
+telemetry.addData ("Heading Error (deg)", headingErr);
+telemetry.update ();
             telemetry.update ();
         } else {
             telemetry.addLine ("Tag Missing. Stasis");

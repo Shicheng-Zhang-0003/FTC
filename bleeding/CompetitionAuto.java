@@ -9,6 +9,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.teamcode.util.HardwareNames;
+import java.util.ArrayList;
 @Disabled
 @Autonomous (name = "Competition Auto", group = "Competition")
 public class CompetitionAuto extends LinearOpMode {
@@ -16,15 +17,17 @@ public class CompetitionAuto extends LinearOpMode {
     public void runOpMode () throws InterruptedException {
         Pose2d startPose = new Pose2d (0, 0, 0);
         MecanumDrive drive = new MecanumDrive (hardwareMap, startPose);
+ArrayList<String> missing = new ArrayList<> ();
         S12_IntegratedMechanism mechanism = new S12_IntegratedMechanism ();
         mechanism.init (
-            hardwareMap.get (DcMotorEx.class, HardwareNames.SLIDE_MOTOR),
-            hardwareMap.get (Servo.class, HardwareNames.INTAKE_SERVO),
-            hardwareMap.get (DigitalChannel.class, HardwareNames.GAME_PIECE_SENSOR),
-            hardwareMap.get (DigitalChannel.class, HardwareNames.BOTTOM_LIMIT)
+            safeGet (DcMotorEx.class, HardwareNames.SLIDE_MOTOR),
+            safeGet (Servo.class, HardwareNames.INTAKE_SERVO),
+            safeGet (DigitalChannel.class, HardwareNames.GAME_PIECE_SENSOR),
+            safeGet (DigitalChannel.class, HardwareNames.BOTTOM_LIMIT)
         ); telemetry.addData ("Status", "Competition Auto Ready");
         telemetry.addData ("Road Runner Tuned", RobotReadiness.ROAD_RUNNER_TUNED);
         telemetry.addData ("Auto Ready", RobotReadiness.AUTO_READY);
+telemetry.addData ("Missing Devices", missing.isEmpty () ? "None" : missing.toString ());
         telemetry.addData ("Sequence", "Drive -> Intake -> Drive -> Score");
         telemetry.update ();
         waitForStart ();
@@ -60,4 +63,12 @@ public class CompetitionAuto extends LinearOpMode {
         ); telemetry.addData ("Status", "Auto complete");
         telemetry.update ();
     }
+
+private <T> T safeGet (Class<? extends T> type, String name) {
+try {
+return hardwareMap.get (type, name);
+} catch (RuntimeException e) {
+return null;
+}
+}
 }

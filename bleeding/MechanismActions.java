@@ -57,8 +57,9 @@ public final class MechanismActions {
             waitForAnyState(
                 mechanism,
                 timeoutSeconds,
-                S12_IntegratedMechanism.State.INTAKING,
-                S12_IntegratedMechanism.State.IDLE
+                S12_IntegratedMechanism.State.FILLED,
+                S12_IntegratedMechanism.State.CLOSING_CLAW,
+                S12_IntegratedMechanism.State.ERROR
             )
         );
     }
@@ -69,7 +70,8 @@ public final class MechanismActions {
             waitForAnyState(
                 mechanism,
                 timeoutSeconds,
-                S12_IntegratedMechanism.State.IDLE
+                S12_IntegratedMechanism.State.IDLE,
+                S12_IntegratedMechanism.State.ERROR
             )
         );
     }

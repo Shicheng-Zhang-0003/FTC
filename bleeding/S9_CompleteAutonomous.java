@@ -12,6 +12,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.teamcode.util.HardwareNames;
+import java.util.ArrayList;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.vision.VisionPortal;
@@ -33,12 +34,14 @@ public class S9_CompleteAutonomous extends LinearOpMode {
     public void runOpMode () throws InterruptedException {
         Pose2d startPose = new Pose2d (0, 0, 0);
         MecanumDrive drive = new MecanumDrive (hardwareMap, startPose);
-        DcMotor intake = hardwareMap.get (DcMotor.class, HardwareNames.INTAKE_MOTOR);
-        Servo dump = hardwareMap.get (Servo.class, HardwareNames.DUMP_SERVO);
+ArrayList<String> missing = new ArrayList<> ();
+        DcMotor intake = safeGet (DcMotor.class, HardwareNames.INTAKE_MOTOR);
+        Servo dump = safeGet (Servo.class, HardwareNames.DUMP_SERVO);
         hopper = new S7_StateMachineHopper ();
         hopper.init (intake, dump);
         initVision ();
         telemetry.addData ("Status", "Operational");
+telemetry.addData ("Missing Devices", missing.isEmpty () ? "None" : missing.toString ());
         telemetry.addData ("Target Tag", "Looking for ID 5");
         telemetry.update ();
         waitForStart ();
@@ -103,7 +106,14 @@ public class S9_CompleteAutonomous extends LinearOpMode {
             for (AprilTagDetection detection : detections) {if (detection.id == 5) {return detection.id;}}
             sleep (100);
         } return -1;
-    } private void initVision () {
+    } private <T> T safeGet (Class<? extends T> type, String name) {
+try {
+return hardwareMap.get (type, name);
+} catch (RuntimeException e) {
+return null;
+}
+}
+private void initVision () {
         aprilTag = new AprilTagProcessor.Builder ()
             .setDrawAxes (true)
             .setDrawCubeProjection (true)

@@ -9,8 +9,10 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
+import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.util.HardwareNames;
 import org.firstinspires.ftc.teamcode.util.MathUtils;
 
@@ -26,6 +28,9 @@ public class CompetitionTeleOp extends LinearOpMode {
 
     private S12_IntegratedMechanism mechanism;
     private HangSubsystem hang;
+private IMU imu;
+private boolean fieldCentric = true;
+private boolean lastOptionsPressed = false;
 
     private boolean mechanismReady = false;
     private boolean hangReady = false;
@@ -51,6 +56,7 @@ public class CompetitionTeleOp extends LinearOpMode {
         DigitalChannel bottomLimit = safeGet (DigitalChannel.class, HardwareNames.BOTTOM_LIMIT);
         DcMotor winch = safeGet (DcMotor.class, HardwareNames.WINCH_MOTOR);
         DigitalChannel topLimit = safeGet (DigitalChannel.class, HardwareNames.TOP_LIMIT);
+imu = safeGet (IMU.class, HardwareNames.IMU);
 
         if (frontLeft == null) {missing.add (HardwareNames.FRONT_LEFT);}
         if (frontRight == null) {missing.add (HardwareNames.FRONT_RIGHT);}
@@ -71,7 +77,7 @@ public class CompetitionTeleOp extends LinearOpMode {
 
         if (winch != null && topLimit != null) {
             hang = new HangSubsystem ();
-            hang.init (winch, topLimit);
+            hang.init (winch, topLimit, bottomLimit);
             hangReady = true;
         }
 
@@ -85,7 +91,9 @@ public class CompetitionTeleOp extends LinearOpMode {
 
         waitForStart ();
 
-        if (mechanismReady) {mechanism.resetControllers ();}
+        //Reset IMU heading so field-centric driving starts at zero
+if (imu != null) {imu.resetYaw ();}
+if (mechanismReady) {mechanism.resetControllers ();}
         loopTimer.reset ();
 
         while (opModeIsActive ()) {
@@ -106,7 +114,13 @@ public class CompetitionTeleOp extends LinearOpMode {
 
             //Mechanism controls
             if (mechanismReady) {
-                if (gamepad2.a) {mechanism.startIntakeSequence ();}
+                //Toggle field-centric driving (gamepad1.options, edge-detected)
+boolean optionsNow = gamepad1.options;
+if (optionsNow && !lastOptionsPressed) {
+fieldCentric = !fieldCentric;
+}
+lastOptionsPressed = optionsNow;
+if (gamepad2.a) {mechanism.startIntakeSequence ();}
                 else if (gamepad2.b) {mechanism.startScoreSequence ();}
                 else if (gamepad2.x) {mechanism.emergencyStop ();}
             }
@@ -124,9 +138,12 @@ public class CompetitionTeleOp extends LinearOpMode {
             }
 
             //Driver telemetry
-            telemetry.addData ("Mechanism State", mechanismReady ? mechanism.getState () : "Not initialized");
+            telemetry.addData ("Field Centric", fieldCentric);
+telemetry.addData ("IMU Present", imu != null);
+telemetry.addData ("Mechanism State", mechanismReady ? mechanism.getState () : "Not initialized");
             telemetry.addData ("Has Piece", mechanismReady ? mechanism.hasPiece () : false);
             telemetry.addData ("Hang Top Limit", hangReady ? hang.isTopPressed () : false);
+telemetry.addData ("Hang Bottom Limit", hangReady ? hang.isBottomPressed () : false);
             telemetry.addData ("Winch Power", hangReady ? hang.getPower () : 0.0);
             telemetry.addData ("Missing Devices", missing.isEmpty () ? "None" : missing.toString ());
             telemetry.update ();

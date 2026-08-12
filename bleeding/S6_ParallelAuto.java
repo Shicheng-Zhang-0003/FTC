@@ -7,6 +7,9 @@ import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Servo;
+import org.firstinspires.ftc.teamcode.util.HardwareNames;
 @Disabled
 @Autonomous (name = "Parallel Operands", group = "S6: Advanced")
 public class S6_ParallelAuto extends LinearOpMode {
@@ -16,6 +19,9 @@ public class S6_ParallelAuto extends LinearOpMode {
         Pose2d startPose = new Pose2d (0, 0, 0);
         MecanumDrive drive = new MecanumDrive (hardwareMap, startPose);
         S6_PollenHopper hopper = new S6_PollenHopper ();
+DcMotor intakeMotor = hardwareMap.get (DcMotor.class, HardwareNames.INTAKE_MOTOR);
+Servo dumpServo = hardwareMap.get (Servo.class, HardwareNames.DUMP_SERVO);
+hopper.init (intakeMotor, dumpServo);
         telemetry.addData ("Status", "Ready for Parallel Magic!");
         telemetry.update ();
         waitForStart ();

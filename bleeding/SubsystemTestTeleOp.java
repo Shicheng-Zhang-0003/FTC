@@ -52,7 +52,7 @@ public class SubsystemTestTeleOp extends LinearOpMode {
 
         if (winch != null && topLimit != null) {
             hang = new HangSubsystem();
-            hang.init(winch, topLimit);
+            hang.init(winch, topLimit, bottomLimit);
             hangReady = true;
         }
 

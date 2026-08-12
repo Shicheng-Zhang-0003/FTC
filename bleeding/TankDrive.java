@@ -69,13 +69,13 @@ public final class TankDrive {
                 RevHubOrientationOnRobot.UsbFacingDirection.FORWARD;
 
         // drive model parameters
-        public double inPerTick = 0;
-        public double trackWidthTicks = 0;
+        public double inPerTick = 0.3757;
+        public double trackWidthTicks = 38.6;
 
         // feedforward parameters (in tick units)
-        public double kS = 0;
-        public double kV = 0;
-        public double kA = 0;
+        public double kS = 0.5;
+        public double kV = 0.02;
+        public double kA = 0.005;
 
         // path profile parameters (in inches)
         public double maxWheelVel = 50;
@@ -91,13 +91,13 @@ public final class TankDrive {
         public double ramseteBBar = 2.0; // positive
 
         // turn controller gains
-        public double turnGain = 0.0;
-        public double turnVelGain = 0.0;
+        public double turnGain = 3.0;
+        public double turnVelGain = 1.0;
     }
 
     public static Params PARAMS = new Params();
 
-    public final TankKinematics kinematics = new TankKinematics(PARAMS.inPerTick * PARAMS.trackWidthTicks);
+    public final TankKinematics kinematics = new TankKinematics(Math.max(PARAMS.inPerTick * PARAMS.trackWidthTicks, 0.001));
 
     public final TurnConstraints defaultTurnConstraints = new TurnConstraints(
             PARAMS.maxAngVel, -PARAMS.maxAngAccel, PARAMS.maxAngAccel);
