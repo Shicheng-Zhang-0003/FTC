@@ -105,15 +105,6 @@ if (mechanismReady) {mechanism.resetControllers ();}
                 double y = MathUtils.deadband (-gamepad1.left_stick_y, RobotConstants.DRIVE_STICK_DEADBAND);
                 double x = MathUtils.deadband (gamepad1.left_stick_x, RobotConstants.DRIVE_STICK_DEADBAND) * RobotConstants.DRIVE_MECANUM_STRAFE_COMPENSATION;
                 double rx = MathUtils.deadband (gamepad1.right_stick_x, RobotConstants.DRIVE_STICK_DEADBAND);
-                //Field-centric: rotate stick inputs by the robot's current heading
-                //Falls back to robot-centric if the IMU is not present
-                if (fieldCentric && imu != null) {
-                    double yaw = imu.getRobotYawPitchRollAngles ().getYaw (AngleUnit.RADIANS);
-                    double rotX = x * Math.cos (-yaw) - y * Math.sin (-yaw);
-                    double rotY = x * Math.sin (-yaw) + y * Math.cos (-yaw);
-                    x = rotX;
-                    y = rotY;
-                }
                 double denominator = Math.max (Math.abs (y) + Math.abs (x) + Math.abs (rx), 1);
                 frontLeft.setPower ((y + x + rx) / denominator);
                 frontRight.setPower ((y - x - rx) / denominator);

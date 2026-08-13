@@ -18,24 +18,13 @@ public class CompetitionAuto extends LinearOpMode {
         Pose2d startPose = new Pose2d (0, 0, 0);
         MecanumDrive drive = new MecanumDrive (hardwareMap, startPose);
 ArrayList<String> missing = new ArrayList<> ();
-                DcMotorEx slide = safeGet (DcMotorEx.class, HardwareNames.SLIDE_MOTOR);
-        Servo intakeServo = safeGet (Servo.class, HardwareNames.INTAKE_SERVO);
-        DigitalChannel gamePieceSensor = safeGet (DigitalChannel.class, HardwareNames.GAME_PIECE_SENSOR);
-        DigitalChannel bottomLimit = safeGet (DigitalChannel.class, HardwareNames.BOTTOM_LIMIT);
-
-        if (slide == null) {missing.add (HardwareNames.SLIDE_MOTOR);}
-        if (intakeServo == null) {missing.add (HardwareNames.INTAKE_SERVO);}
-        if (gamePieceSensor == null) {missing.add (HardwareNames.GAME_PIECE_SENSOR);}
-        if (bottomLimit == null) {missing.add (HardwareNames.BOTTOM_LIMIT);}
-
-        boolean mechanismReady = false;
         S12_IntegratedMechanism mechanism = new S12_IntegratedMechanism ();
-        if (slide != null && intakeServo != null && gamePieceSensor != null && bottomLimit != null) {
-            mechanism.init (slide, intakeServo, gamePieceSensor, bottomLimit);
-            mechanismReady = true;
-        }
-
-        telemetry.addData ("Status", mechanismReady ? "Competition Auto Ready" : "MISSING MECHANISM HARDWARE");
+        mechanism.init (
+            safeGet (DcMotorEx.class, HardwareNames.SLIDE_MOTOR),
+            safeGet (Servo.class, HardwareNames.INTAKE_SERVO),
+            safeGet (DigitalChannel.class, HardwareNames.GAME_PIECE_SENSOR),
+            safeGet (DigitalChannel.class, HardwareNames.BOTTOM_LIMIT)
+        ); telemetry.addData ("Status", "Competition Auto Ready");
         telemetry.addData ("Road Runner Tuned", RobotReadiness.ROAD_RUNNER_TUNED);
         telemetry.addData ("Auto Ready", RobotReadiness.AUTO_READY);
 telemetry.addData ("Missing Devices", missing.isEmpty () ? "None" : missing.toString ());
@@ -43,16 +32,6 @@ telemetry.addData ("Missing Devices", missing.isEmpty () ? "None" : missing.toSt
         telemetry.update ();
         waitForStart ();
         if (isStopRequested ()) {return;}
-        //B2 fix: do not run an auto whose mechanism failed to initialize
-        if (!mechanismReady) {
-            while (opModeIsActive ()) {
-                telemetry.addData ("AUTO ABORTED", "Missing mechanism hardware");
-                telemetry.addData ("Missing Devices", missing.toString ());
-                telemetry.update ();
-                sleep (100);
-            }
-            return;
-        }
         mechanism.resetControllers ();
         Pose2d intakePose = new Pose2d (24, 0, 0);
         Pose2d scorePose = new Pose2d (24, 48, 0);
