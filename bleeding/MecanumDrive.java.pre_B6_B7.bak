@@ -135,12 +135,8 @@ public final class MecanumDrive {
 
             imu = lazyImu.get();
 
-                        // B7 fix: encoder directions resolved - no separate reversal needed here.
-            // FTC SDK setDirection(REVERSE) also inverts encoder readings, so the left
-            // drive encoders already count positive-forward after the motor reversal above.
-            // VERIFY with ForwardPushTest / LocalizationTest: pushing the robot forward must
-            // increase all four drive encoder positions. If a wheel decreases, either reverse
-            // it here or re-run this script with --reverse-left-encoders.
+            // TODO: reverse encoders if needed
+            //   leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
 
             this.pose = pose;
         }
@@ -238,10 +234,8 @@ public final class MecanumDrive {
         rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-                // B6 fix: reverse the left side to match CompetitionTeleOp and the drive shells.
-        // This robot's left motors must spin opposite the right side for forward motion.
-        leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
-        leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
+        // TODO: reverse motor directions if needed
+        //   leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
 
         // TODO: make sure your config has an IMU with this name (can be BNO or BHI)
         //   see https://ftc-docs.firstinspires.org/en/latest/hardware_and_software_configuration/configuring/index.html

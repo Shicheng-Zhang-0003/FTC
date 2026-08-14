@@ -53,18 +53,9 @@ telemetry.addData ("Missing Devices", missing.isEmpty () ? "None" : missing.toSt
             }
             return;
         }
-                // B11 fix: readiness gate - AUTO_READY must be true to run the auto
-        if (!RobotReadiness.AUTO_READY) {
-            while (opModeIsActive ()) {
-                telemetry.addData ("AUTO BLOCKED", "RobotReadiness.AUTO_READY is false");
-                telemetry.addData ("Required", "RR tuning + mechanism validation + verified paths");
-                telemetry.update ();
-                sleep (100);
-            }
-            return;
-        }
         mechanism.resetControllers ();
         Pose2d intakePose = new Pose2d (24, 0, 0);
+        Pose2d scorePose = new Pose2d (24, 48, 0);
         Actions.runBlocking (
             new SequentialAction (
                 MechanismActions.startIntake (mechanism),

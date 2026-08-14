@@ -45,10 +45,6 @@ public class S12_IntegratedMechanism {
     private final ElapsedTime stateTimer = new ElapsedTime();
 
     private static final double MOVING_TIMEOUT_SECONDS = 3.0;
-    // B19 fix: INTAKING waits on the game-piece sensor, which may never fire
-    // (missed piece, dead/misaligned sensor). Without a timeout this state
-    // hangs forever. Kept <= CompetitionAuto's intake budget so auto fails fast.
-    private static final double INTAKE_TIMEOUT_SECONDS = 3.0;
     private static final double SERVO_SETTLE_SECONDS = 0.25;
 
     public void init(DcMotorEx slide, Servo intake, DigitalChannel sensor, DigitalChannel limit) {
@@ -197,7 +193,6 @@ public class S12_IntegratedMechanism {
             case MOVING_TO_INTAKE:
                 if (atTargetPosition()) {
                     currentState = State.INTAKING;
-                    stateTimer.reset(); // B19 fix: INTAKING timeout measures time intaking, not the preceding move
                 } else if (stateTimer.seconds() > MOVING_TIMEOUT_SECONDS) {
                     currentState = State.ERROR;
                     packet.put("Error", "MOVING_TO_INTAKE timeout");
@@ -209,9 +204,6 @@ public class S12_IntegratedMechanism {
                     intakeServo.setPosition(RobotConstants.SERVO_INTAKE_CLOSED);
                     currentState = State.CLOSING_CLAW;
                     stateTimer.reset();
-                } else if (stateTimer.seconds() > INTAKE_TIMEOUT_SECONDS) { // B19 fix
-                    currentState = State.ERROR;
-                    packet.put("Error", "INTAKING timeout - no game piece detected");
                 }
                 break;
 

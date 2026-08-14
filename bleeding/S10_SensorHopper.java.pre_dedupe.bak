@@ -85,7 +85,15 @@ public class S10_SensorHopper {
             currentState = State.IDLE;
         }
     }
-//Updates, call this every loop iteration
+// B14 fix: explicit recovery
+public void clearError () {
+    requireInitialised ();
+    if (currentState == State.ERROR) {
+        intakeMotor.setPower (0);
+        dumpServo.setPosition (RobotConstants.SERVO_DUMP_STOWED);
+        currentState = State.IDLE;
+    }
+} //Updates, call this every loop iteration
     public void update (TelemetryPacket packet) {
         packet.put ("Hopper Initialised", initialised);
         if (!initialised) {return;}
@@ -140,6 +148,7 @@ public class S10_SensorHopper {
                 else if (gamepad1.x) {hopper.startDump ();} 
                                 else if (gamepad1.y) {hopper.finishDump ();}
 else if (gamepad1.left_bumper) {hopper.clearError ();} // B14 fix
+                else if (gamepad1.left_bumper) {hopper.clearError ();}
                 //Update state machine, checks sensors automatically
                 TelemetryPacket packet = new TelemetryPacket ();
                 hopper.update (packet);

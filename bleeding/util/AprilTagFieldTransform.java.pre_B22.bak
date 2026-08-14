@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.util;
 import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 @Config
@@ -88,5 +89,23 @@ if (offset == null) {return new Vector2d (0, 0);}
 // Invert: if tag is 5 inches to the right, robot must move 5 inches right.
 // B15 fix: inversion sign is a dashboard knob - verify on field (see top of file)
 return new Vector2d (ALIGNMENT_SIGN * offset.x, ALIGNMENT_SIGN * offset.y);
+}
+/**
+* Full field-relative correction: computes the target robot pose given
+* the tag's known field position and the camera-relative detection.
+*
+* @param detection    The AprilTag detection (must have a valid ftcPose)
+* @param tagFieldPose Known field position of the tag (from field layout)
+* @return Target Pose2d for the robot, or null if detection is invalid
+*/
+public static Pose2d getFieldCorrection (AprilTagDetection detection, Pose2d tagFieldPose) {
+if ((detection == null) || (detection.metadata == null)) {return null;}
+Vector2d robotOffset = getRobotRelativeOffset (detection);
+double headingError = getHeadingError (detection);
+// Target position: tag position minus the robot's offset from tag
+double targetX = tagFieldPose.position.x - robotOffset.x;
+double targetY = tagFieldPose.position.y - robotOffset.y;
+double targetHeading = tagFieldPose.heading.toDouble () - Math.toRadians (headingError);
+return new Pose2d (targetX, targetY, targetHeading);
 }
 }

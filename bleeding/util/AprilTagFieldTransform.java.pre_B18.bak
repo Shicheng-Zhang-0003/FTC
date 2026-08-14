@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.util;
 import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 @Config
@@ -21,55 +22,39 @@ public static double CAMERA_YAW_DEG = 0.0;    // Rotation from robot forward axi
 //   - robot drives AWAY along an axis -> flip ALIGNMENT_SIGN via dashboard
 //   - rotation squares the robot the wrong way -> flip HEADING_SIGN
 // Flip live in FTC Dashboard, then bake the working values in here.
-// B18 fix: the alignment math below now reads ftcPose (tag pose relative
-// to the camera, in inches) instead of robotPose (the robot's FIELD
-// position estimate, in meters). With the wrong input the B9 >18in sanity
-// clamp in S8_AprilTagAuto discarded every correction, so alignment never
-// applied. If the robot strafes when it should drive forward (or vice
-// versa), CAMERA_YAW_DEG disagrees with your mount - fix it there, not
-// with ALIGNMENT_SIGN (which flips both axes together).
 public static double ALIGNMENT_SIGN = -1.0;
 public static double HEADING_SIGN = 1.0;    // rotation from robot forward axis
-// B18 fix: M_TO_IN removed - ftcPose is already in inches. The meters
-// conversion only existed because the old code misread robotPose.
+// Meters to inches conversion factor
+private static final double M_TO_IN = 39.3701;
 /**
 * Converts camera-relative AprilTag detection into robot-relative offset.
 * Applies camera mounting yaw to rotate from camera frame to robot frame,
 * then adds the physical mounting offset.
 *
-* @param detection The AprilTag detection (must have a valid ftcPose)
+* @param detection The AprilTag detection (must have valid metadata)
 * @return Robot-relative Vector2d (x=forward, y=left) in inches, or null if invalid
 */
 public static Vector2d getRobotRelativeOffset (AprilTagDetection detection) {
-// B18 fix: read ftcPose, not robotPose.
-//   ftcPose   = tag pose relative to the CAMERA, in INCHES (always valid)
-//   robotPose = robot FIELD position estimate, in meters (needs metadata)
-// The old code treated robotPose.getPosition() as a tag-relative offset,
-// so every 'offset' was really a field coordinate.
-if ((detection == null) || (detection.ftcPose == null)) {return null;}
-double camRight = detection.ftcPose.x;   // inches, + = tag right of camera
-double camForward = detection.ftcPose.y; // inches, + = tag downrange
+if ((detection == null) || (detection.metadata == null)) {return null;}
+// Get camera-relative position in meters, convert to inches
+double camX = detection.robotPose.getPosition ().x * M_TO_IN;
+double camY = detection.robotPose.getPosition ().y * M_TO_IN;
 // Apply camera yaw to rotate into robot frame
 double yawRad = Math.toRadians (CAMERA_YAW_DEG);
-// Rotate the tag vector from the camera frame into the robot frame.
-// With CAMERA_YAW_DEG = 0: forward = ftcPose.y, left = -ftcPose.x.
-double robotX = camForward * Math.cos (yawRad) + camRight * Math.sin (yawRad) + CAMERA_X_OFFSET;
-double robotY = camForward * Math.sin (yawRad) - camRight * Math.cos (yawRad) + CAMERA_Y_OFFSET;
+double robotX = camX * Math.cos (yawRad) - camY * Math.sin (yawRad) + CAMERA_X_OFFSET;
+double robotY = camX * Math.sin (yawRad) + camY * Math.cos (yawRad) + CAMERA_Y_OFFSET;
 return new Vector2d (robotX, robotY);
 }
 /**
 * Returns the heading error between the robot and the tag, in degrees.
 * Positive means the robot needs to rotate counterclockwise.
 *
-* @param detection The AprilTag detection (must have a valid ftcPose)
+* @param detection The AprilTag detection (must have valid metadata)
 * @return Heading error in degrees, or 0 if detection is invalid
 */
 public static double getHeadingError (AprilTagDetection detection) {
-// B18 fix: ftcPose.yaw is the tag's yaw relative to the camera in degrees -
-// the actual 'square up' error. robotPose yaw was the robot's absolute
-// field heading, which is meaningless for tag alignment.
-if ((detection == null) || (detection.ftcPose == null)) {return 0.0;}
-double camYawDeg = detection.ftcPose.yaw;
+if ((detection == null) || (detection.metadata == null)) {return 0.0;}
+double camYawDeg = Math.toDegrees (detection.robotPose.getOrientation ().getYaw ());
 // B15 fix: heading sign is a dashboard knob - verify on field (see top of file)
 return HEADING_SIGN * (camYawDeg + CAMERA_YAW_DEG);
 }
@@ -78,7 +63,7 @@ return HEADING_SIGN * (camYawDeg + CAMERA_YAW_DEG);
 * Use this for quick alignment without full field localization.
 * The returned vector tells you how far to drive (forward, strafe) to align.
 *
-* @param detection The AprilTag detection (must have a valid ftcPose)
+* @param detection The AprilTag detection (must have valid metadata)
 * @return Correction vector in inches (x=forward, y=strafe), or zero vector if invalid
 */
 public static Vector2d getAlignmentVector (AprilTagDetection detection) {
@@ -88,5 +73,23 @@ if (offset == null) {return new Vector2d (0, 0);}
 // Invert: if tag is 5 inches to the right, robot must move 5 inches right.
 // B15 fix: inversion sign is a dashboard knob - verify on field (see top of file)
 return new Vector2d (ALIGNMENT_SIGN * offset.x, ALIGNMENT_SIGN * offset.y);
+}
+/**
+* Full field-relative correction: computes the target robot pose given
+* the tag's known field position and the camera-relative detection.
+*
+* @param detection    The AprilTag detection (must have valid metadata)
+* @param tagFieldPose Known field position of the tag (from field layout)
+* @return Target Pose2d for the robot, or null if detection is invalid
+*/
+public static Pose2d getFieldCorrection (AprilTagDetection detection, Pose2d tagFieldPose) {
+if ((detection == null) || (detection.metadata == null)) {return null;}
+Vector2d robotOffset = getRobotRelativeOffset (detection);
+double headingError = getHeadingError (detection);
+// Target position: tag position minus the robot's offset from tag
+double targetX = tagFieldPose.position.x - robotOffset.x;
+double targetY = tagFieldPose.position.y - robotOffset.y;
+double targetHeading = tagFieldPose.heading.toDouble () - Math.toRadians (headingError);
+return new Pose2d (targetX, targetY, targetHeading);
 }
 }

@@ -53,18 +53,9 @@ telemetry.addData ("Missing Devices", missing.isEmpty () ? "None" : missing.toSt
             }
             return;
         }
-                // B11 fix: readiness gate - AUTO_READY must be true to run the auto
-        if (!RobotReadiness.AUTO_READY) {
-            while (opModeIsActive ()) {
-                telemetry.addData ("AUTO BLOCKED", "RobotReadiness.AUTO_READY is false");
-                telemetry.addData ("Required", "RR tuning + mechanism validation + verified paths");
-                telemetry.update ();
-                sleep (100);
-            }
-            return;
-        }
         mechanism.resetControllers ();
         Pose2d intakePose = new Pose2d (24, 0, 0);
+        Pose2d scorePose = new Pose2d (24, 48, 0);
         Actions.runBlocking (
             new SequentialAction (
                 MechanismActions.startIntake (mechanism),
@@ -73,28 +64,21 @@ telemetry.addData ("Missing Devices", missing.isEmpty () ? "None" : missing.toSt
                         .lineToX (24)
                         .build (),
                     mechanism
-                ),                 MechanismActions.waitForAnyState (
-                mechanism,
-                // B10 fix: 2.0s was too tight - the wait must cover slide travel to intake
-                // height, game-piece detection, and claw close. ERROR is accepted too so a
-                // failed mechanism fails fast instead of burning the whole timeout.
-                4.0,
-                S12_IntegratedMechanism.State.FILLED,
-                S12_IntegratedMechanism.State.CLOSING_CLAW,
-                S12_IntegratedMechanism.State.ERROR
+                ), MechanismActions.waitForAnyState (
+                    mechanism,
+                    2.0,
+                    S12_IntegratedMechanism.State.FILLED,
+                    S12_IntegratedMechanism.State.CLOSING_CLAW
                 ), MechanismActions.driveWithUpdates (
                     drive.actionBuilder (intakePose)
                         .lineToY (48)
                         .build (),
                     mechanism
                 ), MechanismActions.startScore (mechanism),
-                                MechanismActions.waitForAnyState (
-                mechanism,
-                // B10 fix: scoring worst case is move (<=3s) + hold (1s) + retract;
-                // 3.0s could expire mid-sequence. ERROR accepted for fail-fast.
-                5.0,
-                S12_IntegratedMechanism.State.IDLE,
-                S12_IntegratedMechanism.State.ERROR
+                MechanismActions.waitForAnyState (
+                    mechanism,
+                    3.0,
+                    S12_IntegratedMechanism.State.IDLE
                 ), MechanismActions.emergencyStop (mechanism)
             )
         ); telemetry.addData ("Status", "Auto complete");

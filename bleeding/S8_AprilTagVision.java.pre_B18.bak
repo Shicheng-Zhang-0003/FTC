@@ -30,18 +30,22 @@ public class S8_AprilTagVision extends LinearOpMode {
             for (AprilTagDetection detection : detections) {
                 //Tag metadata
                 telemetry.addLine (String.format ("Tag ID: %d", detection.id));
-                // B18 fix: ftcPose is the tag's pose relative to the CAMERA, in inches,
-                // and needs no metadata. robotPose is the robot's FIELD position estimate -
-                // the old block mislabeled it as 'robot position relative to tag'.
-                // FTC convention: x + = tag right of camera, y + = downrange, z + = up.
-                if (detection.ftcPose != null) {
-                    double x = detection.ftcPose.x;
-                    double y = detection.ftcPose.y;
-                    double z = detection.ftcPose.z;
-                    telemetry.addLine (String.format ("Tag offset: X=%.2f, Y=%.2f, Z=%.2f in", x, y, z));
-                    telemetry.addLine (String.format ("Range %.1f in, Bearing %.1f deg, Elevation %.1f deg", detection.ftcPose.range, detection.ftcPose.bearing, detection.ftcPose.elevation));
-                    double yaw = detection.ftcPose.yaw;
-                    telemetry.addLine (String.format ("Tag yaw vs camera: %.1f degrees", yaw));
+                //Robot position relative to tag (in meters)
+                if (detection.metadata != null) {
+                    //X, left/right (positive direction = right)
+                    //Y, forward/backward (positive direction = forward)
+                    //Z, up/down (positive direction = up)
+                    double x = detection.robotPose.getPosition ().x;
+                    double y = detection.robotPose.getPosition ().y;
+                    double z = detection.robotPose.getPosition ().z;
+                    telemetry.addLine (String.format ("Position: X=%.2f, Y=%.2f, Z=%.2f m", x, y, z));
+                    //Convert to inches, better FTC nominal unit
+                    double xInches = x * 39.3701;
+                    double yInches = y * 39.3701;
+                    telemetry.addLine (String.format ("Position: %.1f inches right, %.1f inches forward", xInches, yInches));
+                    //Robot vector relative to tag
+                    double heading = Math.toDegrees (detection.robotPose.getOrientation ().getYaw ());
+                    telemetry.addLine (String.format ("Heading: %.1f degrees", heading));
                 } telemetry.addLine (); //Blank line between tags
             } telemetry.update ();
         }

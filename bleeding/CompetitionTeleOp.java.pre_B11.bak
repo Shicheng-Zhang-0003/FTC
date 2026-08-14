@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
-import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -58,19 +57,6 @@ private boolean lastOptionsPressed = false;
         DcMotor winch = safeGet (DcMotor.class, HardwareNames.WINCH_MOTOR);
         DigitalChannel topLimit = safeGet (DigitalChannel.class, HardwareNames.TOP_LIMIT);
 imu = safeGet (IMU.class, HardwareNames.IMU);
-// B17 fix: initialize the IMU before any reads. resetYaw () and
-// getRobotYawPitchRollAngles () throw (or return garbage) until
-// initialize () is called with the hub orientation. Without this,
-// field-centric driving crashes TeleOp at start (fieldCentric
-// defaults to true). imuReady gates every IMU use below; on init
-// failure we fall back to robot-centric, same as a missing IMU.
-boolean imuReady = false;
-if (imu != null) {
-    imuReady = imu.initialize (new IMU.Parameters (new RevHubOrientationOnRobot (
-        RevHubOrientationOnRobot.LogoFacingDirection.UP,
-        RevHubOrientationOnRobot.UsbFacingDirection.FORWARD)));
-    if (!imuReady) {missing.add (HardwareNames.IMU + " (init failed)");}
-}
 
         if (frontLeft == null) {missing.add (HardwareNames.FRONT_LEFT);}
         if (frontRight == null) {missing.add (HardwareNames.FRONT_RIGHT);}
@@ -100,19 +86,13 @@ if (imu != null) {
         telemetry.addData ("Missing Devices", missing.isEmpty () ? "None" : missing.toString ());
         telemetry.addData ("Mechanism Ready", mechanismReady);
         telemetry.addData ("Hang Ready", hangReady);
-        telemetry.addData ("IMU Ready", imuReady); // B17 fix
-                telemetry.addData ("Road Runner Tuned", RobotReadiness.ROAD_RUNNER_TUNED);
-        // B11 fix: non-blocking readiness warning. TeleOp is deliberately NOT gated -
-        // drivers must always have drive control even when auto is not ready.
-        if (!RobotReadiness.ROAD_RUNNER_TUNED) {
-            telemetry.addData ("Warning", "RR NOT TUNED - auto paths unverified");
-        }
+        telemetry.addData ("Road Runner Tuned", RobotReadiness.ROAD_RUNNER_TUNED);
         telemetry.update ();
 
         waitForStart ();
 
         //Reset IMU heading so field-centric driving starts at zero
-if (imuReady) {imu.resetYaw ();} // B17: only after successful init
+if (imu != null) {imu.resetYaw ();}
 if (mechanismReady) {mechanism.resetControllers ();}
         loopTimer.reset ();
 
@@ -126,8 +106,8 @@ if (mechanismReady) {mechanism.resetControllers ();}
                 double x = MathUtils.deadband (gamepad1.left_stick_x, RobotConstants.DRIVE_STICK_DEADBAND) * RobotConstants.DRIVE_MECANUM_STRAFE_COMPENSATION;
                 double rx = MathUtils.deadband (gamepad1.right_stick_x, RobotConstants.DRIVE_STICK_DEADBAND);
                 //Field-centric: rotate stick inputs by the robot's current heading
-                //Falls back to robot-centric if the IMU is missing or failed init (B17)
-                if (fieldCentric && imuReady) {
+                //Falls back to robot-centric if the IMU is not present
+                if (fieldCentric && imu != null) {
                     double yaw = imu.getRobotYawPitchRollAngles ().getYaw (AngleUnit.RADIANS);
                     double rotX = x * Math.cos (-yaw) - y * Math.sin (-yaw);
                     double rotY = x * Math.sin (-yaw) + y * Math.cos (-yaw);
@@ -171,7 +151,6 @@ if (gamepad2.a) {mechanism.startIntakeSequence ();}
             //Driver telemetry
             telemetry.addData ("Field Centric", fieldCentric);
 telemetry.addData ("IMU Present", imu != null);
-telemetry.addData ("IMU Ready", imuReady);
 telemetry.addData ("Mechanism State", mechanismReady ? mechanism.getState () : "Not initialized");
             telemetry.addData ("Has Piece", mechanismReady ? mechanism.hasPiece () : false);
             telemetry.addData ("Hang Top Limit", hangReady ? hang.isTopPressed () : false);

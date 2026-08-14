@@ -37,11 +37,13 @@ public static double SLIDE_KG = 0.10; // B8 fix: gravity feedforward
     public static int SLIDE_GROUND = 0;
     public static int SLIDE_LOW = 500;
     public static int SLIDE_INTAKE = 500;
+    public static int SLIDE_SCORE_LOW = 1000;
     public static int SLIDE_SCORE_HIGH = 1500;
     public static int SLIDE_MAX_SAFE = 1900;
     public static int SLIDE_POSITION_TOLERANCE = 50;
 
     // Sensors
+    public static double SENSOR_GAME_PIECE_DISTANCE_CM = 5.0;
     public static boolean SENSOR_LIMIT_SWITCH_INVERTED = true;
     public static boolean SENSOR_GAME_PIECE_INVERTED = false;
     public static double SENSOR_LIMIT_SWITCH_DEBOUNCE_SECONDS = 0.05;

@@ -36,18 +36,13 @@ public class S8_AprilTagAuto extends LinearOpMode {
                 .build ()
         ); //Use AprilTag to align vectors
         AprilTagDetection targetTag = findTargetTag ();
-        // B18 fix: gate on ftcPose, not metadata. Alignment only needs the
-        // tag-relative pose; ftcPose is valid without a tag library.
-        if ((targetTag != null) && (targetTag.ftcPose != null)) {
+        if ((targetTag != null) && (targetTag.metadata != null)) {
             telemetry.addLine ("Alignment in operation");
             telemetry.update ();
-            // B18 fix: diagnostics now come from ftcPose (tag relative to camera,
-            // INCHES). robotPose is the robot's FIELD position in meters - these
-            // readouts used to show ~24in of field coordinate, which is also why
-            // the B9 >18in sanity clamp below always skipped the correction.
-            double xOffset = targetTag.ftcPose.x; //inches, + = tag right of camera
-            double yOffset = targetTag.ftcPose.y; //inches, + = tag downrange
-            double headingError = targetTag.ftcPose.yaw; //degrees, tag yaw vs camera
+            //Get robot position relative to tag
+            double xOffset = targetTag.robotPose.getPosition ().x * 39.3701; //inches
+            double yOffset = targetTag.robotPose.getPosition ().y * 39.3701; //inches
+            double headingError = Math.toDegrees (targetTag.robotPose.getOrientation ().getYaw ());
             //Small corrections for miniature alignments
             //Ex: If 5 inches to the right, strafe left 5 inches
             telemetry.addData ("Alignment xOffset", xOffset);
@@ -60,31 +55,7 @@ telemetry.addData ("Align Forward (in)", alignVec.x);
 telemetry.addData ("Align Strafe (in)", alignVec.y);
 telemetry.addData ("Heading Error (deg)", headingErr);
 telemetry.update ();
-// B9 fix: actually apply the correction (previously computed and telemetered only).
-// alignVec is robot-relative (x=forward, y=strafe-left); rotate it into the
-// field frame with the current heading, translate, then turn to square up.
-// Sanity clamp: corrections beyond ~18 inches are almost certainly misdetections.
-// If the robot drives AWAY from the tag on the real field, the sign convention
-// in AprilTagFieldTransform is inverted for your camera mount (bug B15):
-// flip fieldDx/fieldDy and/or the turn sign, and fix it at the source.
-double offsetMag = Math.hypot (alignVec.x, alignVec.y);
-if (offsetMag > 18.0) {
-telemetry.addLine ("Correction too large - likely misdetection, skipping");
-telemetry.update ();
-} else {
-Pose2d pose = drive.localizer.getPose ();
-double heading = pose.heading.toDouble ();
-double fieldDx = alignVec.x * Math.cos (heading) - alignVec.y * Math.sin (heading);
-double fieldDy = alignVec.x * Math.sin (heading) + alignVec.y * Math.cos (heading);
-Actions.runBlocking (
-drive.actionBuilder (pose)
-.strafeTo (new Vector2d (pose.position.x + fieldDx, pose.position.y + fieldDy))
-.turn (Math.toRadians (headingErr))
-.build ()
-);
-telemetry.addLine ("Correction applied");
-telemetry.update ();
-}
+            telemetry.update ();
         } else {
             telemetry.addLine ("Tag Missing. Stasis");
             telemetry.update ();

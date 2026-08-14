@@ -36,18 +36,13 @@ public class S8_AprilTagAuto extends LinearOpMode {
                 .build ()
         ); //Use AprilTag to align vectors
         AprilTagDetection targetTag = findTargetTag ();
-        // B18 fix: gate on ftcPose, not metadata. Alignment only needs the
-        // tag-relative pose; ftcPose is valid without a tag library.
-        if ((targetTag != null) && (targetTag.ftcPose != null)) {
+        if ((targetTag != null) && (targetTag.metadata != null)) {
             telemetry.addLine ("Alignment in operation");
             telemetry.update ();
-            // B18 fix: diagnostics now come from ftcPose (tag relative to camera,
-            // INCHES). robotPose is the robot's FIELD position in meters - these
-            // readouts used to show ~24in of field coordinate, which is also why
-            // the B9 >18in sanity clamp below always skipped the correction.
-            double xOffset = targetTag.ftcPose.x; //inches, + = tag right of camera
-            double yOffset = targetTag.ftcPose.y; //inches, + = tag downrange
-            double headingError = targetTag.ftcPose.yaw; //degrees, tag yaw vs camera
+            //Get robot position relative to tag
+            double xOffset = targetTag.robotPose.getPosition ().x * 39.3701; //inches
+            double yOffset = targetTag.robotPose.getPosition ().y * 39.3701; //inches
+            double headingError = Math.toDegrees (targetTag.robotPose.getOrientation ().getYaw ());
             //Small corrections for miniature alignments
             //Ex: If 5 inches to the right, strafe left 5 inches
             telemetry.addData ("Alignment xOffset", xOffset);

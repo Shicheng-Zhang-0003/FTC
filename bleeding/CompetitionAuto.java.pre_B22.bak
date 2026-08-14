@@ -65,6 +65,7 @@ telemetry.addData ("Missing Devices", missing.isEmpty () ? "None" : missing.toSt
         }
         mechanism.resetControllers ();
         Pose2d intakePose = new Pose2d (24, 0, 0);
+        Pose2d scorePose = new Pose2d (24, 48, 0);
         Actions.runBlocking (
             new SequentialAction (
                 MechanismActions.startIntake (mechanism),

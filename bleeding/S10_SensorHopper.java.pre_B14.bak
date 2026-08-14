@@ -76,16 +76,7 @@ public class S10_SensorHopper {
             dumpServo.setPosition (RobotConstants.SERVO_DUMP_STOWED);
             currentState = State.IDLE;
         }
-        } //B14 fix: explicit recovery from safety stops (ERROR)
-    public void clearError () {
-        requireInitialised ();
-        if (currentState == State.ERROR) {
-            intakeMotor.setPower (0);
-            dumpServo.setPosition (RobotConstants.SERVO_DUMP_STOWED);
-            currentState = State.IDLE;
-        }
-    }
-//Updates, call this every loop iteration
+    } //Updates, call this every loop iteration
     public void update (TelemetryPacket packet) {
         packet.put ("Hopper Initialised", initialised);
         if (!initialised) {return;}
@@ -101,17 +92,10 @@ public class S10_SensorHopper {
                     currentState = State.FILLED;
                     packet.put ("Transition", "Sensor detected game piece");
                 } break;
-                        case DUMPING:
-            // B14 fix: the top limit actually stops the dump now (previously only warned).
-            // Over-extension is physically unexpected: kill motion, stow, flag ERROR.
-            // Recover with clearError() - bound to left_bumper in the test opmode below.
-            if (atTopLimit ()) {
-                intakeMotor.setPower (0);
-                dumpServo.setPosition (RobotConstants.SERVO_DUMP_STOWED);
-                currentState = State.ERROR;
-                packet.put ("Safety", "Hit top limit switch - dump stopped");
-            }
-            break;
+            case DUMPING:
+                // Safety check - if we're dumping and hit the top limit, stop
+                if (atTopLimit ()) {packet.put ("Warning", "Hit top limit switch");}
+                break;
             default:
                 break;
         }
@@ -138,8 +122,7 @@ public class S10_SensorHopper {
                 if (gamepad1.a) {hopper.startIntake ();} 
                 else if (gamepad1.b) {hopper.stopIntake ();} 
                 else if (gamepad1.x) {hopper.startDump ();} 
-                                else if (gamepad1.y) {hopper.finishDump ();}
-else if (gamepad1.left_bumper) {hopper.clearError ();} // B14 fix
+                else if (gamepad1.y) {hopper.finishDump ();}
                 //Update state machine, checks sensors automatically
                 TelemetryPacket packet = new TelemetryPacket ();
                 hopper.update (packet);
