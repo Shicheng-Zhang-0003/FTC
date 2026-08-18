@@ -25,6 +25,12 @@ public class S4_SimpleAuto extends LinearOpMode {
         frontRight.setDirection (DcMotorSimple.Direction.FORWARD);
         backRight.setDirection (DcMotorSimple.Direction.FORWARD);
         //Use encoders
+        // B26 fix: re-zero the drive encoders at init so every RUN_TO_POSITION
+        // target is measured from a known zero, not whatever the encoders last read.
+        frontLeft.setMode (DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        frontRight.setMode (DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        backLeft.setMode (DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        backRight.setMode (DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         frontLeft.setMode (DcMotor.RunMode.RUN_USING_ENCODER);
         frontRight.setMode (DcMotor.RunMode.RUN_USING_ENCODER);
         backLeft.setMode (DcMotor.RunMode.RUN_USING_ENCODER);

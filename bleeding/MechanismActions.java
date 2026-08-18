@@ -58,7 +58,9 @@ public final class MechanismActions {
                 mechanism,
                 timeoutSeconds,
                 S12_IntegratedMechanism.State.FILLED,
-                S12_IntegratedMechanism.State.CLOSING_CLAW,
+                // B24 fix: CLOSING_CLAW removed - startScoreSequence() only acts on FILLED,
+                // so accepting it let the wait return before the piece was confirmed and
+                // scoring silently became a no-op. Wait for FILLED (hasPiece guaranteed) instead.
                 S12_IntegratedMechanism.State.ERROR
             )
         );

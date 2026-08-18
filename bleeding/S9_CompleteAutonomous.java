@@ -40,7 +40,8 @@ ArrayList<String> missing = new ArrayList<> ();
             hopperReady = true;
         }
         // B20 fix: vision removed - S9 is a dead-reckoning training auto.
-        // Tag-guided behavior belongs in S8 / CompetitionAuto, not a disabled legacy opmode.                telemetry.addData ("Status", hopperReady ? "Operational" : "MISSING MECHANISM HARDWARE");
+        // Tag-guided behavior belongs in S8 / CompetitionAuto, not a disabled legacy opmode.
+        telemetry.addData("Status", hopperReady ? "Operational" : "MISSING MECHANISM HARDWARE"); // B23 fix: un-swallow from B20 comment
 telemetry.addData ("Missing Devices", missing.isEmpty () ? "None" : missing.toString ());
         telemetry.update ();
         waitForStart ();
