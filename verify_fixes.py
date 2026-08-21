@@ -66,7 +66,40 @@ DUP_CHECKS = [
 
 def read(root, rel):
     p = root / rel
-    return p.read_text(encoding="utf-8") if p.exists() else None
+    if p.exists():
+        return p.read_text(encoding="utf-8")
+    # B28 fix: fall back to the Kickoff archive. purge.py moves the BIOBUZZ
+    # guesswork into archive_biobuzz_guesswork/, and the audit should still
+    # verify those files instead of reporting NOFILE.
+    archive_p = root / "archive_biobuzz_guesswork" / rel
+    if archive_p.exists():
+        return archive_p.read_text(encoding="utf-8")
+    return None
+
+# B27 fix: detect live code swallowed into a // comment line.
+# A swallowed line reads as a comment but contains what looks like a complete
+# method-call statement ending in ');'. This is the class of bug that hid B23.
+def find_swallowed_code(root):
+    import re
+    call = re.compile(r"\w+\.\w+\s*\(")
+    hits = []
+    for java in sorted(root.rglob("*.java")):
+        if ".bak" in java.name:
+            continue
+        try:
+            lines = java.read_text(encoding="utf-8").splitlines()
+        except Exception:
+            continue
+        for i, line in enumerate(lines, 1):
+            stripped = line.strip()
+            if not stripped.startswith("//"):
+                continue
+            if stripped.endswith(");") and call.search(stripped):
+                # B27 patch: ignore Road Runner Quickstart "TODO: reverse if needed" templates
+                if ".setDirection(" in stripped:
+                    continue
+                hits.append((str(java.relative_to(root)), i, stripped[:90]))
+    return hits
 
 def main():
     root = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else SCRIPT_DIR / "bleeding"
@@ -102,6 +135,15 @@ def main():
         lb = sum(1 for l in s10.splitlines() if l.strip().startswith("else if") and "left_bumper" in l and "clearError" in l)
         if lb != 1: dup_problems += 1
         print(f"  {'✅' if lb == 1 else '❌'} S10_SensorHopper.java: left_bumper+clearError bindings = {lb} (expected 1)")
+
+    print("\n=== Swallowed-code checks (B27) ===")
+    swallowed = find_swallowed_code(root)
+    if swallowed:
+        dup_problems += len(swallowed)
+        for rel, lineno, preview in swallowed:
+            print(f"  ❌ {rel}:{lineno} possible swallowed code: {preview}")
+    else:
+        print("  ✅ no swallowed code lines detected")
 
     print("\n=== Summary ===")
     print(f"  Fixes present: {present} / {present + missing}")
