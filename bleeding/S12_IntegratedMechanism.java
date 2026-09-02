@@ -248,6 +248,8 @@ public class S12_IntegratedMechanism {
                         case ERROR:
             // B13 fix: persistent recovery hint. ERROR only clears via emergencyStop()
             // (gamepad2.x in CompetitionTeleOp / Subsystem Test). Tell the driver.
+            targetPosition = slideMotor.getCurrentPosition();
+            slideMotor.setPower(0);
             packet.put ("Recovery", "ERROR: press X (emergencyStop) to clear");
             break;
 

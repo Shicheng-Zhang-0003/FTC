@@ -64,7 +64,6 @@ telemetry.addData ("Missing Devices", missing.isEmpty () ? "None" : missing.toSt
             return;
         }
         mechanism.resetControllers ();
-        Pose2d intakePose = new Pose2d (24, 0, 0);
         Actions.runBlocking (
             new SequentialAction (
                 MechanismActions.startIntake (mechanism),
@@ -85,7 +84,7 @@ telemetry.addData ("Missing Devices", missing.isEmpty () ? "None" : missing.toSt
                 // scoring silently became a no-op. Wait for FILLED (hasPiece guaranteed) instead.
                 S12_IntegratedMechanism.State.ERROR
                 ), MechanismActions.driveWithUpdates (
-                    drive.actionBuilder (intakePose)
+                    drive.actionBuilder (drive.localizer.getPose ())
                         .lineToY (48)
                         .build (),
                     mechanism

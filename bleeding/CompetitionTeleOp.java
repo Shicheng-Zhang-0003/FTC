@@ -118,6 +118,7 @@ if (mechanismReady) {mechanism.resetControllers ();}
 
         while (opModeIsActive ()) {
             double dt = loopTimer.seconds ();
+            loopTimer.reset ();
             if (dt < 0.001) {dt = 0.001;}
 
             //Drivetrain
@@ -179,8 +180,6 @@ telemetry.addData ("Hang Bottom Limit", hangReady ? hang.isBottomPressed () : fa
             telemetry.addData ("Winch Power", hangReady ? hang.getPower () : 0.0);
             telemetry.addData ("Missing Devices", missing.isEmpty () ? "None" : missing.toString ());
             telemetry.update ();
-
-            loopTimer.reset ();
         }
     }
 

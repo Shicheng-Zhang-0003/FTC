@@ -23,10 +23,10 @@ public class RobotConstants {
     public static double SERVO_WRIST_PICKUP = 0.8;
     public static double SERVO_WRIST_SCORE = 0.2;
 
-    // Slide PID
-    public static double SLIDE_P = 10.0;
-    public static double SLIDE_I = 0.5;
-    public static double SLIDE_D = 1.0;
+    // Slide PID (scaled for encoder ticks, max travel ~1900 ticks)
+    public static double SLIDE_P = 0.005;
+    public static double SLIDE_I = 0.0001;
+    public static double SLIDE_D = 0.0002;
     public static double SLIDE_INTEGRAL_CLAMP = 2.0;
     public static double SLIDE_OUTPUT_CLAMP = 1.0;
 public static double SLIDE_KG = 0.10; // B8 fix: gravity feedforward

@@ -37,6 +37,7 @@ public class s2_hang_branch_endgame extends LinearOpMode {
 
         while (opModeIsActive()) {
             double dt = loopTimer.seconds();
+            loopTimer.reset();
             if (dt < 0.001) dt = 0.001;
 
             boolean topPressed = topLimitDebounced.update(
@@ -44,8 +45,6 @@ public class s2_hang_branch_endgame extends LinearOpMode {
                 dt,
                 RobotConstants.SENSOR_LIMIT_SWITCH_DEBOUNCE_SECONDS
             );
-
-            loopTimer.reset();
 
             if ((gamepad2.y) && (!topPressed)) {
                 winchMotor.setPower(1.0);

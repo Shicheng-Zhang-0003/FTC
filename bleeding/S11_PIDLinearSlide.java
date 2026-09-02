@@ -44,6 +44,7 @@ public class S11_PIDLinearSlide extends LinearOpMode {
             int currentPosition = slideMotor.getCurrentPosition ();
             double error = targetPosition - currentPosition;
             double dt = loopTimer.seconds ();
+            loopTimer.reset ();
             if (dt < 0.001) {dt = 0.001;}
             pid.setGains (RobotConstants.SLIDE_P, RobotConstants.SLIDE_I, RobotConstants.SLIDE_D);
                         double power = pid.update (error, currentPosition, dt);
@@ -52,7 +53,6 @@ public class S11_PIDLinearSlide extends LinearOpMode {
                 power += RobotConstants.SLIDE_KG;
             }
             slideMotor.setPower (MathUtils.clamp (power, -1.0, 1.0));
-            loopTimer.reset ();
             double pTerm = pid.pTerm;
             double iTerm = pid.iTerm;
             double dTerm = pid.dTerm; 

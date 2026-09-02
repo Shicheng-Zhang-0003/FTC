@@ -73,6 +73,7 @@ public class SubsystemTestTeleOp extends LinearOpMode {
 
         while (opModeIsActive()) {
             double dt = loopTimer.seconds();
+            loopTimer.reset();
             if (dt < 0.001) dt = 0.001;
 
             if (mechanismReady) {
@@ -103,8 +104,6 @@ public class SubsystemTestTeleOp extends LinearOpMode {
 
             telemetry.addData("Missing Devices", missing.isEmpty() ? "None" : missing.toString());
             telemetry.update();
-
-            loopTimer.reset();
         }
     }
 

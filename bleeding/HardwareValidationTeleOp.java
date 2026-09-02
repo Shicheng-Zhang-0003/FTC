@@ -72,9 +72,15 @@ public class HardwareValidationTeleOp extends LinearOpMode {
         track(imu, HardwareNames.IMU);
         track(webcam, HardwareNames.WEBCAM);
 
-        if (frontLeft != null) frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        if (frontLeft != null) {
+            frontLeft.setDirection(DcMotor.Direction.REVERSE);
+            frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        }
+        if (backLeft != null) {
+            backLeft.setDirection(DcMotor.Direction.REVERSE);
+            backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        }
         if (frontRight != null) frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        if (backLeft != null) backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         if (backRight != null) backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         if (slideMotor != null) {
