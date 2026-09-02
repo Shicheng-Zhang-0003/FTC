@@ -91,7 +91,7 @@ if (imu != null) {
 
         if (winch != null && topLimit != null) {
             hang = new HangSubsystem ();
-            hang.init (winch, topLimit, bottomLimit);
+            hang.init (winch, topLimit);
             hangReady = true;
         }
 

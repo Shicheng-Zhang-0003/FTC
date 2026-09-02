@@ -84,7 +84,6 @@ return HEADING_SIGN * (camYawDeg + CAMERA_YAW_DEG);
 public static Vector2d getAlignmentVector (AprilTagDetection detection) {
 Vector2d offset = getRobotRelativeOffset (detection);
 if (offset == null) {return new Vector2d (0, 0);}
-// Invert: if tag is 5 inches to the right, robot must move 5 inches right
 // Invert: if tag is 5 inches to the right, robot must move 5 inches right.
 // B15 fix: inversion sign is a dashboard knob - verify on field (see top of file)
 return new Vector2d (ALIGNMENT_SIGN * offset.x, ALIGNMENT_SIGN * offset.y);
