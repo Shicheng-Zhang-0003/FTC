@@ -19,7 +19,7 @@ import org.firstinspires.ftc.teamcode.util.MathUtils;
 
 import java.util.ArrayList;
 
-@TeleOp (name = "Competition TeleOp", group = "Competition")
+@TeleOp(name = "Competition TeleOp", group = "Competition")
 public class CompetitionTeleOp extends LinearOpMode {
 
     private DcMotor frontLeft;
@@ -29,120 +29,120 @@ public class CompetitionTeleOp extends LinearOpMode {
 
     private S12_IntegratedMechanism mechanism;
     private HangSubsystem hang;
-private IMU imu;
-private boolean fieldCentric = true;
-private boolean lastOptionsPressed = false;
+    private IMU imu;
+    private boolean fieldCentric = true;
+    private boolean lastOptionsPressed = false;
 
     private boolean mechanismReady = false;
     private boolean hangReady = false;
 
     private final ArrayList<String> missing = new ArrayList<>();
-    private final ElapsedTime loopTimer = new ElapsedTime ();
+    private final ElapsedTime loopTimer = new ElapsedTime();
 
     @Override
-    public void runOpMode () {
-        frontLeft = safeGet (DcMotor.class, HardwareNames.FRONT_LEFT);
-        frontRight = safeGet (DcMotor.class, HardwareNames.FRONT_RIGHT);
-        backLeft = safeGet (DcMotor.class, HardwareNames.BACK_LEFT);
-        backRight = safeGet (DcMotor.class, HardwareNames.BACK_RIGHT);
+    public void runOpMode() {
+        frontLeft = safeGet(DcMotor.class, HardwareNames.FRONT_LEFT);
+        frontRight = safeGet(DcMotor.class, HardwareNames.FRONT_RIGHT);
+        backLeft = safeGet(DcMotor.class, HardwareNames.BACK_LEFT);
+        backRight = safeGet(DcMotor.class, HardwareNames.BACK_RIGHT);
 
-        if (frontLeft != null) {frontLeft.setDirection (DcMotorSimple.Direction.REVERSE);}
-        if (backLeft != null) {backLeft.setDirection (DcMotorSimple.Direction.REVERSE);}
-        if (frontRight != null) {frontRight.setDirection (DcMotorSimple.Direction.FORWARD);}
-        if (backRight != null) {backRight.setDirection (DcMotorSimple.Direction.FORWARD);}
+        if (frontLeft != null) {frontLeft.setDirection(DcMotorSimple.Direction.REVERSE);}
+        if (backLeft != null) {backLeft.setDirection(DcMotorSimple.Direction.REVERSE);}
+        if (frontRight != null) {frontRight.setDirection(DcMotorSimple.Direction.FORWARD);}
+        if (backRight != null) {backRight.setDirection(DcMotorSimple.Direction.FORWARD);}
 
-        DcMotorEx slide = safeGet (DcMotorEx.class, HardwareNames.SLIDE_MOTOR);
-        Servo intakeServo = safeGet (Servo.class, HardwareNames.INTAKE_SERVO);
-        DigitalChannel gamePieceSensor = safeGet (DigitalChannel.class, HardwareNames.GAME_PIECE_SENSOR);
-        DigitalChannel bottomLimit = safeGet (DigitalChannel.class, HardwareNames.BOTTOM_LIMIT);
-        DcMotor winch = safeGet (DcMotor.class, HardwareNames.WINCH_MOTOR);
-        DigitalChannel topLimit = safeGet (DigitalChannel.class, HardwareNames.TOP_LIMIT);
-imu = safeGet (IMU.class, HardwareNames.IMU);
-// B17 fix: initialize the IMU before any reads. resetYaw () and
-// getRobotYawPitchRollAngles () throw (or return garbage) until
-// initialize () is called with the hub orientation. Without this,
-// field-centric driving crashes TeleOp at start (fieldCentric
-// defaults to true). imuReady gates every IMU use below; on init
-// failure we fall back to robot-centric, same as a missing IMU.
-boolean imuReady = false;
-if (imu != null) {
-    imuReady = imu.initialize (new IMU.Parameters (new RevHubOrientationOnRobot (
-        RevHubOrientationOnRobot.LogoFacingDirection.UP,
-        RevHubOrientationOnRobot.UsbFacingDirection.FORWARD)));
-    if (!imuReady) {missing.add (HardwareNames.IMU + " (init failed)");}
-}
+        DcMotorEx slide = safeGet(DcMotorEx.class, HardwareNames.SLIDE_MOTOR);
+        Servo intakeServo = safeGet(Servo.class, HardwareNames.INTAKE_SERVO);
+        DigitalChannel gamePieceSensor = safeGet(DigitalChannel.class, HardwareNames.GAME_PIECE_SENSOR);
+        DigitalChannel bottomLimit = safeGet(DigitalChannel.class, HardwareNames.BOTTOM_LIMIT);
+        DcMotor winch = safeGet(DcMotor.class, HardwareNames.WINCH_MOTOR);
+        DigitalChannel topLimit = safeGet(DigitalChannel.class, HardwareNames.TOP_LIMIT);
+        imu = safeGet(IMU.class, HardwareNames.IMU);
+        // B17 fix: initialize the IMU before any reads. resetYaw () and
+        // getRobotYawPitchRollAngles () throw (or return garbage) until
+        // initialize () is called with the hub orientation. Without this,
+        // field-centric driving crashes TeleOp at start (fieldCentric
+        // defaults to true). imuReady gates every IMU use below; on init
+        // failure we fall back to robot-centric, same as a missing IMU.
+        boolean imuReady = false;
+        if (imu != null) {
+            imuReady = imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(
+                    RevHubOrientationOnRobot.LogoFacingDirection.UP,
+                    RevHubOrientationOnRobot.UsbFacingDirection.FORWARD)));
+            if (!imuReady) {missing.add(HardwareNames.IMU + " (init failed)");}
+        }
 
-        if (frontLeft == null) {missing.add (HardwareNames.FRONT_LEFT);}
-        if (frontRight == null) {missing.add (HardwareNames.FRONT_RIGHT);}
-        if (backLeft == null) {missing.add (HardwareNames.BACK_LEFT);}
-        if (backRight == null) {missing.add (HardwareNames.BACK_RIGHT);}
-        if (slide == null) {missing.add (HardwareNames.SLIDE_MOTOR);}
-        if (intakeServo == null) {missing.add (HardwareNames.INTAKE_SERVO);}
-        if (gamePieceSensor == null) {missing.add (HardwareNames.GAME_PIECE_SENSOR);}
-        if (bottomLimit == null) {missing.add (HardwareNames.BOTTOM_LIMIT);}
-        if (winch == null) {missing.add (HardwareNames.WINCH_MOTOR);}
-        if (topLimit == null) {missing.add (HardwareNames.TOP_LIMIT);}
+        if (frontLeft == null) {missing.add(HardwareNames.FRONT_LEFT);}
+        if (frontRight == null) {missing.add(HardwareNames.FRONT_RIGHT);}
+        if (backLeft == null) {missing.add(HardwareNames.BACK_LEFT);}
+        if (backRight == null) {missing.add(HardwareNames.BACK_RIGHT);}
+        if (slide == null) {missing.add(HardwareNames.SLIDE_MOTOR);}
+        if (intakeServo == null) {missing.add(HardwareNames.INTAKE_SERVO);}
+        if (gamePieceSensor == null) {missing.add(HardwareNames.GAME_PIECE_SENSOR);}
+        if (bottomLimit == null) {missing.add(HardwareNames.BOTTOM_LIMIT);}
+        if (winch == null) {missing.add(HardwareNames.WINCH_MOTOR);}
+        if (topLimit == null) {missing.add(HardwareNames.TOP_LIMIT);}
 
         if (slide != null && intakeServo != null && gamePieceSensor != null && bottomLimit != null) {
-            mechanism = new S12_IntegratedMechanism ();
-            mechanism.init (slide, intakeServo, gamePieceSensor, bottomLimit);
+            mechanism = new S12_IntegratedMechanism();
+            mechanism.init(slide, intakeServo, gamePieceSensor, bottomLimit);
             mechanismReady = true;
         }
 
         if (winch != null && topLimit != null) {
-            hang = new HangSubsystem ();
-            hang.init (winch, topLimit);
+            hang = new HangSubsystem();
+            hang.init(winch, topLimit);
             hangReady = true;
         }
 
-        telemetry = new MultipleTelemetry (telemetry, FtcDashboard.getInstance ().getTelemetry ());
-        telemetry.addData ("Status", "Competition TeleOp Ready");
-        telemetry.addData ("Missing Devices", missing.isEmpty () ? "None" : missing.toString ());
-        telemetry.addData ("Mechanism Ready", mechanismReady);
-        telemetry.addData ("Hang Ready", hangReady);
-        telemetry.addData ("IMU Ready", imuReady); // B17 fix
-                telemetry.addData ("Road Runner Tuned", RobotReadiness.ROAD_RUNNER_TUNED);
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+        telemetry.addData("Status", "Competition TeleOp Ready");
+        telemetry.addData("Missing Devices", missing.isEmpty() ? "None" : missing.toString());
+        telemetry.addData("Mechanism Ready", mechanismReady);
+        telemetry.addData("Hang Ready", hangReady);
+        telemetry.addData("IMU Ready", imuReady); // B17 fix
+        telemetry.addData("Road Runner Tuned", RobotReadiness.ROAD_RUNNER_TUNED);
         // B11 fix: non-blocking readiness warning. TeleOp is deliberately NOT gated -
         // drivers must always have drive control even when auto is not ready.
         if (!RobotReadiness.ROAD_RUNNER_TUNED) {
-            telemetry.addData ("Warning", "RR NOT TUNED - auto paths unverified");
+            telemetry.addData("Warning", "RR NOT TUNED - auto paths unverified");
         }
-        telemetry.update ();
+        telemetry.update();
 
-        waitForStart ();
+        waitForStart();
 
         //Reset IMU heading so field-centric driving starts at zero
-if (imuReady) {imu.resetYaw ();} // B17: only after successful init
-if (mechanismReady) {mechanism.resetControllers ();}
-        loopTimer.reset ();
+        if (imuReady) {imu.resetYaw();} // B17: only after successful init
+        if (mechanismReady) {mechanism.resetControllers();}
+        loopTimer.reset();
 
-        while (opModeIsActive ()) {
-            double dt = loopTimer.seconds ();
-            loopTimer.reset ();
+        while (opModeIsActive()) {
+            double dt = loopTimer.seconds();
+            loopTimer.reset();
             if (dt < 0.001) {dt = 0.001;}
 
             //Drivetrain
             if (frontLeft != null && frontRight != null && backLeft != null && backRight != null) {
-                double y = MathUtils.deadband (-gamepad1.left_stick_y, RobotConstants.DRIVE_STICK_DEADBAND);
-                double x = MathUtils.deadband (gamepad1.left_stick_x, RobotConstants.DRIVE_STICK_DEADBAND) * RobotConstants.DRIVE_MECANUM_STRAFE_COMPENSATION;
-                double rx = MathUtils.deadband (gamepad1.right_stick_x, RobotConstants.DRIVE_STICK_DEADBAND);
+                double y = MathUtils.deadband(-gamepad1.left_stick_y, RobotConstants.DRIVE_STICK_DEADBAND);
+                double x = MathUtils.deadband(gamepad1.left_stick_x, RobotConstants.DRIVE_STICK_DEADBAND) * RobotConstants.DRIVE_MECANUM_STRAFE_COMPENSATION;
+                double rx = MathUtils.deadband(gamepad1.right_stick_x, RobotConstants.DRIVE_STICK_DEADBAND);
                 //Field-centric: rotate stick inputs by the robot's current heading
                 //Falls back to robot-centric if the IMU is missing or failed init (B17)
                 if (fieldCentric && imuReady) {
-                    double yaw = imu.getRobotYawPitchRollAngles ().getYaw (AngleUnit.RADIANS);
-                    double rotX = x * Math.cos (-yaw) - y * Math.sin (-yaw);
-                    double rotY = x * Math.sin (-yaw) + y * Math.cos (-yaw);
+                    double yaw = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
+                    double rotX = x * Math.cos(-yaw) - y * Math.sin(-yaw);
+                    double rotY = x * Math.sin(-yaw) + y * Math.cos(-yaw);
                     x = rotX;
                     y = rotY;
                 }
-                double denominator = Math.max (Math.abs (y) + Math.abs (x) + Math.abs (rx), 1);
-                frontLeft.setPower ((y + x + rx) / denominator);
-                frontRight.setPower ((y - x - rx) / denominator);
-                backLeft.setPower ((y - x + rx) / denominator);
-                backRight.setPower ((y + x - rx) / denominator);
+                double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
+                frontLeft.setPower((y + x + rx) / denominator);
+                frontRight.setPower((y - x - rx) / denominator);
+                backLeft.setPower((y - x + rx) / denominator);
+                backRight.setPower((y + x - rx) / denominator);
             }
 
-                        //Toggle field-centric driving (gamepad1.options, edge-detected)
+            //Toggle field-centric driving (gamepad1.options, edge-detected)
             //B4 fix: toggle lives outside mechanismReady so drive mode works even without mechanism hardware
             boolean optionsNow = gamepad1.options;
             if (optionsNow && !lastOptionsPressed) {
@@ -152,40 +152,40 @@ if (mechanismReady) {mechanism.resetControllers ();}
 
             //Mechanism controls
             if (mechanismReady) {
-if (gamepad2.a) {mechanism.startIntakeSequence ();}
-                else if (gamepad2.b) {mechanism.startScoreSequence ();}
-                else if (gamepad2.x) {mechanism.emergencyStop ();}
+                if (gamepad2.a) {mechanism.startIntakeSequence();}
+                else if (gamepad2.b) {mechanism.startScoreSequence();}
+                else if (gamepad2.x) {mechanism.emergencyStop();}
             }
 
             //Hang controls
             if (hangReady) {
-                hang.update (dt, gamepad2.y, gamepad2.left_bumper);
+                hang.update(dt, gamepad2.y, gamepad2.left_bumper);
             }
 
             //Mechanism update
             if (mechanismReady) {
-                TelemetryPacket packet = new TelemetryPacket ();
-                mechanism.update (packet);
-                FtcDashboard.getInstance ().sendTelemetryPacket (packet);
+                TelemetryPacket packet = new TelemetryPacket();
+                mechanism.update(packet);
+                FtcDashboard.getInstance().sendTelemetryPacket(packet);
             }
 
             //Driver telemetry
-            telemetry.addData ("Field Centric", fieldCentric);
-telemetry.addData ("IMU Present", imu != null);
-telemetry.addData ("IMU Ready", imuReady);
-telemetry.addData ("Mechanism State", mechanismReady ? mechanism.getState () : "Not initialized");
-            telemetry.addData ("Has Piece", mechanismReady ? mechanism.hasPiece () : false);
-            telemetry.addData ("Hang Top Limit", hangReady ? hang.isTopPressed () : false);
-telemetry.addData ("Hang Bottom Limit", hangReady ? hang.isBottomPressed () : false);
-            telemetry.addData ("Winch Power", hangReady ? hang.getPower () : 0.0);
-            telemetry.addData ("Missing Devices", missing.isEmpty () ? "None" : missing.toString ());
-            telemetry.update ();
+            telemetry.addData("Field Centric", fieldCentric);
+            telemetry.addData("IMU Present", imu != null);
+            telemetry.addData("IMU Ready", imuReady);
+            telemetry.addData("Mechanism State", mechanismReady ? mechanism.getState() : "Not initialized");
+            telemetry.addData("Has Piece", mechanismReady ? mechanism.hasPiece() : false);
+            telemetry.addData("Hang Top Limit", hangReady ? hang.isTopPressed() : false);
+            telemetry.addData("Hang Bottom Limit", hangReady ? hang.isBottomPressed() : false);
+            telemetry.addData("Winch Power", hangReady ? hang.getPower() : 0.0);
+            telemetry.addData("Missing Devices", missing.isEmpty() ? "None" : missing.toString());
+            telemetry.update();
         }
     }
 
-    private <T> T safeGet (Class<? extends T> type, String name) {
+    private <T> T safeGet(Class<? extends T> type, String name) {
         try {
-            return hardwareMap.get (type, name);
+            return hardwareMap.get(type, name);
         } catch (RuntimeException e) {
             return null;
         }

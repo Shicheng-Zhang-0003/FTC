@@ -1,4 +1,11 @@
 package org.firstinspires.ftc.teamcode;
+
+/**
+ * TankDrive — Road Runner Quickstart (legacy).
+ * Active drive is MecanumDrive (TuningOpModes.DRIVE_CLASS). Keep this file
+ * for S1_TankDriveShell teaching and for Tank tuning if chassis changes.
+ * Under-one-roof: formatted, imports ordered, no functional change.
+ */
 import androidx.annotation.NonNull;
 import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.dashboard.config.Config;
