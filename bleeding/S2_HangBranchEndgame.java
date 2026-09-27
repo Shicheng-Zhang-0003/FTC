@@ -12,8 +12,8 @@ import org.firstinspires.ftc.teamcode.util.DebouncedBoolean;
 import org.firstinspires.ftc.teamcode.util.HardwareNames;
 
 @Disabled
-@TeleOp(name = "Canopy Hanging Parking", group = "Mechanisms")
-public class s2_hang_branch_endgame extends LinearOpMode {
+@TeleOp(name = "Canopy Hanging Parking", group = "S2: Endgame")
+public class S2_HangBranchEndgame extends LinearOpMode {
     private DcMotor winchMotor;
     private DigitalChannel topLimitSwitch;
 
@@ -41,12 +41,12 @@ public class s2_hang_branch_endgame extends LinearOpMode {
             if (dt < 0.001) dt = 0.001;
 
             boolean topPressed = topLimitDebounced.update(
-                limitPressed(topLimitSwitch.getState(), RobotConstants.SENSOR_LIMIT_SWITCH_INVERTED),
-                dt,
-                RobotConstants.SENSOR_LIMIT_SWITCH_DEBOUNCE_SECONDS
+                    limitPressed(topLimitSwitch.getState(), RobotConstants.SENSOR_LIMIT_SWITCH_INVERTED),
+                    dt,
+                    RobotConstants.SENSOR_LIMIT_SWITCH_DEBOUNCE_SECONDS
             );
 
-            if ((gamepad2.y) && (!topPressed)) {
+            if (gamepad2.y && !topPressed) {
                 winchMotor.setPower(1.0);
             } else if (gamepad2.x) {
                 winchMotor.setPower(-0.5);

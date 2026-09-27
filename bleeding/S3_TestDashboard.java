@@ -10,8 +10,8 @@ import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.teamcode.util.HardwareNames;
 
 @Disabled
-@TeleOp(name = "Dashboard Testing", group = "Tests")
-public class s3_test_dashboard extends LinearOpMode {
+@TeleOp(name = "Dashboard Testing", group = "S3: Dashboard")
+public class S3_TestDashboard extends LinearOpMode {
     @Override
     public void runOpMode() {
         FtcDashboard dashboard = FtcDashboard.getInstance();
