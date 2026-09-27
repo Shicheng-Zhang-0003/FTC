@@ -17,136 +17,136 @@ public class S10_SensorHopper {
         FILLED,
         DUMPING,
         ERROR
-    } private State currentState = State.IDLE; 
+    } private State currentState = State.IDLE;
     //Hardware config
     private DcMotor intakeMotor;
     private Servo dumpServo;
-    private DigitalChannel gamePieceSensor;  //Beam or color sensor
-    private DigitalChannel topLimitSwitch;   //Prevents over-extension
+    private DigitalChannel gamePieceSensor; //Beam or color sensor
+    private DigitalChannel topLimitSwitch; //Prevents over-extension
     private boolean initialised = false;
-    private void requireInitialised () {if (!initialised) {throw new IllegalStateException ("S10_SensorHopper not initialized");}}
+    private void requireInitialised() {if (!initialised) {throw new IllegalStateException("S10_SensorHopper not initialized");}}
     //Sensor config
-    public void init (DcMotor motor, Servo servo, DigitalChannel sensor, DigitalChannel limitSwitch) {
+    public void init(DcMotor motor, Servo servo, DigitalChannel sensor, DigitalChannel limitSwitch) {
         intakeMotor = motor;
         dumpServo = servo;
         gamePieceSensor = sensor;
         topLimitSwitch = limitSwitch;
         //Configure sensors as input
-        gamePieceSensor.setMode (DigitalChannel.Mode.INPUT);
-        topLimitSwitch.setMode (DigitalChannel.Mode.INPUT);
+        gamePieceSensor.setMode(DigitalChannel.Mode.INPUT);
+        topLimitSwitch.setMode(DigitalChannel.Mode.INPUT);
         //Stow dump servo
-        dumpServo.setPosition (RobotConstants.SERVO_DUMP_STOWED);
+        dumpServo.setPosition(RobotConstants.SERVO_DUMP_STOWED);
         initialised = true;
         currentState = State.IDLE;
-    } public State getState () {return currentState;}
+    } public State getState() {return currentState;}
     //Check if sensor detects a game piece
-    private boolean hasGamePiece () {
-        boolean raw = gamePieceSensor.getState ();
+    private boolean hasGamePiece() {
+        boolean raw = gamePieceSensor.getState();
         return RobotConstants.SENSOR_GAME_PIECE_INVERTED ? !raw : raw;
     } //Check if system extended to top limit
-    private boolean atTopLimit () {
-        boolean raw = topLimitSwitch.getState ();
+    private boolean atTopLimit() {
+        boolean raw = topLimitSwitch.getState();
         return RobotConstants.SENSOR_LIMIT_SWITCH_INVERTED ? !raw : raw;
     } //Most limit switches are inverted
     //Command: Start intaking
-    public void startIntake () {
-        requireInitialised ();
+    public void startIntake() {
+        requireInitialised();
         if (currentState == State.IDLE) {
             currentState = State.INTAKING;
-            intakeMotor.setPower (1.0);
+            intakeMotor.setPower(1.0);
         }
     } //Command to stop intake (manual override)
-    public void stopIntake () {
-        requireInitialised ();
+    public void stopIntake() {
+        requireInitialised();
         if (currentState == State.INTAKING) {
-            intakeMotor.setPower (0);
+            intakeMotor.setPower(0);
             currentState = State.IDLE;
         }
     } //Command to start dumping sequence
-    public void startDump () {
-        requireInitialised ();
+    public void startDump() {
+        requireInitialised();
         if (currentState == State.FILLED) {
             currentState = State.DUMPING;
-            dumpServo.setPosition (RobotConstants.SERVO_DUMP_ACTIVE);
+            dumpServo.setPosition(RobotConstants.SERVO_DUMP_ACTIVE);
         }
     } //Command to finish dumping sequence
-    public void finishDump () {
-        requireInitialised ();
+    public void finishDump() {
+        requireInitialised();
         if (currentState == State.DUMPING) {
-            dumpServo.setPosition (RobotConstants.SERVO_DUMP_STOWED);
+            dumpServo.setPosition(RobotConstants.SERVO_DUMP_STOWED);
             currentState = State.IDLE;
         }
-        } //B14 fix: explicit recovery from safety stops (ERROR)
-    public void clearError () {
-        requireInitialised ();
+    } //B14 fix: explicit recovery from safety stops (ERROR)
+    public void clearError() {
+        requireInitialised();
         if (currentState == State.ERROR) {
-            intakeMotor.setPower (0);
-            dumpServo.setPosition (RobotConstants.SERVO_DUMP_STOWED);
+            intakeMotor.setPower(0);
+            dumpServo.setPosition(RobotConstants.SERVO_DUMP_STOWED);
             currentState = State.IDLE;
         }
     }
-//Updates, call this every loop iteration
-    public void update (TelemetryPacket packet) {
-        packet.put ("Hopper Initialised", initialised);
+    //Updates, call this every loop iteration
+    public void update(TelemetryPacket packet) {
+        packet.put("Hopper Initialised", initialised);
         if (!initialised) {return;}
-        packet.put ("Hopper State", currentState.toString ());
-        packet.put ("Game Piece Detected", hasGamePiece ());
-        packet.put ("At Top Limit", atTopLimit ()); 
+        packet.put("Hopper State", currentState.toString());
+        packet.put("Game Piece Detected", hasGamePiece());
+        packet.put("At Top Limit", atTopLimit());
         //Automatic state transitions based on sensors
         switch (currentState) {
             case INTAKING:
-                //If sensor detects game piece, automatically transition to filled
-                if (hasGamePiece ()) {
-                    intakeMotor.setPower (0);
-                    currentState = State.FILLED;
-                    packet.put ("Transition", "Sensor detected game piece");
-                } break;
-                        case DUMPING:
+            //If sensor detects game piece, automatically transition to filled
+            if (hasGamePiece()) {
+                intakeMotor.setPower(0);
+                currentState = State.FILLED;
+                packet.put("Transition", "Sensor detected game piece");
+            } break;
+            case DUMPING:
             // B14 fix: the top limit actually stops the dump now (previously only warned).
             // Over-extension is physically unexpected: kill motion, stow, flag ERROR.
             // Recover with clearError() - bound to left_bumper in the test opmode below.
-            if (atTopLimit ()) {
-                intakeMotor.setPower (0);
-                dumpServo.setPosition (RobotConstants.SERVO_DUMP_STOWED);
+            if (atTopLimit()) {
+                intakeMotor.setPower(0);
+                dumpServo.setPosition(RobotConstants.SERVO_DUMP_STOWED);
                 currentState = State.ERROR;
-                packet.put ("Safety", "Hit top limit switch - dump stopped");
+                packet.put("Safety", "Hit top limit switch - dump stopped");
             }
             break;
             default:
-                break;
+            break;
         }
     } //TeleOp test mode
     @Disabled
     @TeleOp(name = "Test: Sensor Hopper", group = "S10: Sensors")
     public static class TestSensorHopper extends LinearOpMode {
         @Override
-        public void runOpMode () {
-            S10_SensorHopper hopper = new S10_SensorHopper ();
+        public void runOpMode() {
+            S10_SensorHopper hopper = new S10_SensorHopper();
             //Init all hardware
-            DcMotor intake = hardwareMap.get (DcMotor.class, HardwareNames.INTAKE_MOTOR);
-            Servo dump = hardwareMap.get (Servo.class, HardwareNames.DUMP_SERVO);
-            DigitalChannel sensor = hardwareMap.get (DigitalChannel.class, HardwareNames.GAME_PIECE_SENSOR);
-            DigitalChannel limit = hardwareMap.get (DigitalChannel.class, HardwareNames.TOP_LIMIT);
-            hopper.init (intake, dump, sensor, limit);
+            DcMotor intake = hardwareMap.get(DcMotor.class, HardwareNames.INTAKE_MOTOR);
+            Servo dump = hardwareMap.get(Servo.class, HardwareNames.DUMP_SERVO);
+            DigitalChannel sensor = hardwareMap.get(DigitalChannel.class, HardwareNames.GAME_PIECE_SENSOR);
+            DigitalChannel limit = hardwareMap.get(DigitalChannel.class, HardwareNames.TOP_LIMIT);
+            hopper.init(intake, dump, sensor, limit);
             //Setup dashboard telemetry
-            telemetry = new MultipleTelemetry (telemetry, FtcDashboard.getInstance ().getTelemetry ());
-            telemetry.addData ("Status", "Ready");
-            telemetry.update ();
-            waitForStart ();
-            while (opModeIsActive ()) {
+            telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+            telemetry.addData("Status", "Ready");
+            telemetry.update();
+            waitForStart();
+            while (opModeIsActive()) {
                 //Manual hopper controls
-                if (gamepad1.a) {hopper.startIntake ();} 
-                else if (gamepad1.b) {hopper.stopIntake ();} 
-                else if (gamepad1.x) {hopper.startDump ();} 
-                                else if (gamepad1.y) {hopper.finishDump ();}
-else if (gamepad1.left_bumper) {hopper.clearError ();} // B14 fix
+                if (gamepad1.a) {hopper.startIntake();}
+                else if (gamepad1.b) {hopper.stopIntake();}
+                else if (gamepad1.x) {hopper.startDump();}
+                else if (gamepad1.y) {hopper.finishDump();}
+                else if (gamepad1.left_bumper) {hopper.clearError();} // B14 fix
                 //Update state machine, checks sensors automatically
-                TelemetryPacket packet = new TelemetryPacket ();
-                hopper.update (packet);
-                FtcDashboard.getInstance ().sendTelemetryPacket (packet);
+                TelemetryPacket packet = new TelemetryPacket();
+                hopper.update(packet);
+                FtcDashboard.getInstance().sendTelemetryPacket(packet);
                 //Send telemetry to dashboard
-                telemetry.addData ("Current State", hopper.getState ());
-                telemetry.update ();
+                telemetry.addData("Current State", hopper.getState());
+                telemetry.update();
             }
         }
     }

@@ -67,9 +67,9 @@ public class S12_IntegratedMechanism {
         intakeServo.setPosition(RobotConstants.SERVO_INTAKE_CLOSED);
 
         pid = new PIDController(
-            RobotConstants.SLIDE_P,
-            RobotConstants.SLIDE_I,
-            RobotConstants.SLIDE_D
+        RobotConstants.SLIDE_P,
+        RobotConstants.SLIDE_I,
+        RobotConstants.SLIDE_D
         );
         pid.setIntegralClamp(RobotConstants.SLIDE_INTEGRAL_CLAMP);
         pid.setOutputClamp(RobotConstants.SLIDE_OUTPUT_CLAMP);
@@ -98,9 +98,9 @@ public class S12_IntegratedMechanism {
 
     private void setTargetPosition(int target) {
         targetPosition = MathUtils.clamp(
-            target,
-            RobotConstants.SLIDE_GROUND,
-            RobotConstants.SLIDE_MAX_SAFE
+        target,
+        RobotConstants.SLIDE_GROUND,
+        RobotConstants.SLIDE_MAX_SAFE
         );
     }
 
@@ -129,12 +129,12 @@ public class S12_IntegratedMechanism {
         if (dt < 0.001) dt = 0.001;
 
         pid.setGains(
-            RobotConstants.SLIDE_P,
-            RobotConstants.SLIDE_I,
-            RobotConstants.SLIDE_D
+        RobotConstants.SLIDE_P,
+        RobotConstants.SLIDE_I,
+        RobotConstants.SLIDE_D
         );
 
-                double power = pid.update(error, currentPosition, dt);
+        double power = pid.update(error, currentPosition, dt);
         // B8 fix: gravity feedforward - pure PID sags holding a vertical load.
         // Only applied when lifted, so we don't press into the bottom stop at ground.
         if (targetPosition > RobotConstants.SLIDE_GROUND + 25) {
@@ -153,11 +153,11 @@ public class S12_IntegratedMechanism {
         }
     }
 
-        public void startScoreSequence() {
-    // B12 fix: scoring requires a piece. IDLE used to be accepted, which raised
-    // the slide and opened the claw holding nothing. If you ever need to raise
-    // an empty slide deliberately, add a separate explicit method for it.
-    if (currentState == State.FILLED) {
+    public void startScoreSequence() {
+        // B12 fix: scoring requires a piece. IDLE used to be accepted, which raised
+        // the slide and opened the claw holding nothing. If you ever need to raise
+        // an empty slide deliberately, add a separate explicit method for it.
+        if (currentState == State.FILLED) {
             currentState = State.MOVING_TO_SCORE;
             setTargetPosition(RobotConstants.SLIDE_SCORE_HIGH);
             stateTimer.reset();
@@ -195,66 +195,66 @@ public class S12_IntegratedMechanism {
         switch (currentState) {
 
             case MOVING_TO_INTAKE:
-                if (atTargetPosition()) {
-                    currentState = State.INTAKING;
-                    stateTimer.reset(); // B19 fix: INTAKING timeout measures time intaking, not the preceding move
-                } else if (stateTimer.seconds() > MOVING_TIMEOUT_SECONDS) {
-                    currentState = State.ERROR;
-                    packet.put("Error", "MOVING_TO_INTAKE timeout");
-                }
-                break;
+            if (atTargetPosition()) {
+                currentState = State.INTAKING;
+                stateTimer.reset(); // B19 fix: INTAKING timeout measures time intaking, not the preceding move
+            } else if (stateTimer.seconds() > MOVING_TIMEOUT_SECONDS) {
+                currentState = State.ERROR;
+                packet.put("Error", "MOVING_TO_INTAKE timeout");
+            }
+            break;
 
             case INTAKING:
-                if (hasGamePiece()) {
-                    intakeServo.setPosition(RobotConstants.SERVO_INTAKE_CLOSED);
-                    currentState = State.CLOSING_CLAW;
-                    stateTimer.reset();
-                } else if (stateTimer.seconds() > INTAKE_TIMEOUT_SECONDS) { // B19 fix
-                    currentState = State.ERROR;
-                    packet.put("Error", "INTAKING timeout - no game piece detected");
-                }
-                break;
+            if (hasGamePiece()) {
+                intakeServo.setPosition(RobotConstants.SERVO_INTAKE_CLOSED);
+                currentState = State.CLOSING_CLAW;
+                stateTimer.reset();
+            } else if (stateTimer.seconds() > INTAKE_TIMEOUT_SECONDS) { // B19 fix
+                currentState = State.ERROR;
+                packet.put("Error", "INTAKING timeout - no game piece detected");
+            }
+            break;
 
             case CLOSING_CLAW:
-                if (stateTimer.seconds() >= SERVO_SETTLE_SECONDS) {
-                    hasPiece = true;
-                    currentState = State.FILLED;
-                }
-                break;
+            if (stateTimer.seconds() >= SERVO_SETTLE_SECONDS) {
+                hasPiece = true;
+                currentState = State.FILLED;
+            }
+            break;
 
             case FILLED:
-                break;
+            break;
 
             case MOVING_TO_SCORE:
-                if (atTargetPosition()) {
-                    currentState = State.SCORING;
-                    intakeServo.setPosition(RobotConstants.SERVO_INTAKE_OPEN);
-                    stateTimer.reset();
-                } else if (stateTimer.seconds() > MOVING_TIMEOUT_SECONDS) {
-                    currentState = State.ERROR;
-                    packet.put("Error", "MOVING_TO_SCORE timeout");
-                }
-                break;
+            if (atTargetPosition()) {
+                currentState = State.SCORING;
+                intakeServo.setPosition(RobotConstants.SERVO_INTAKE_OPEN);
+                stateTimer.reset();
+            } else if (stateTimer.seconds() > MOVING_TIMEOUT_SECONDS) {
+                currentState = State.ERROR;
+                packet.put("Error", "MOVING_TO_SCORE timeout");
+            }
+            break;
 
             case SCORING:
-                if (stateTimer.seconds() >= RobotConstants.TIMING_SCORE_HOLD_SECONDS) {
-                    intakeServo.setPosition(RobotConstants.SERVO_INTAKE_CLOSED);
-                    setTargetPosition(RobotConstants.SLIDE_GROUND);
-                    hasPiece = false;
-                    currentState = State.IDLE;
-                }
-                break;
+            if (stateTimer.seconds() >= RobotConstants.TIMING_SCORE_HOLD_SECONDS) {
+                intakeServo.setPosition(RobotConstants.SERVO_INTAKE_CLOSED);
+                setTargetPosition(RobotConstants.SLIDE_GROUND);
+                hasPiece = false;
+                currentState = State.IDLE;
+            }
+            break;
 
-                        case ERROR:
+            case ERROR:
             // B13 fix: persistent recovery hint. ERROR only clears via emergencyStop()
             // (gamepad2.x in CompetitionTeleOp / Subsystem Test). Tell the driver.
             targetPosition = slideMotor.getCurrentPosition();
             slideMotor.setPower(0);
-            packet.put ("Recovery", "ERROR: press X (emergencyStop) to clear");
+            packet.put("Recovery", "ERROR: press X(emergencyStop) to clear");
             break;
 
             default:
-                break;
+            break;
         }
 
         packet.put("State", currentState.toString());

@@ -53,28 +53,28 @@ public final class MechanismActions {
 
     public static Action intakeAndWait(S12_IntegratedMechanism mechanism, double timeoutSeconds) {
         return new SequentialAction(
-            startIntake(mechanism),
-            waitForAnyState(
-                mechanism,
-                timeoutSeconds,
-                S12_IntegratedMechanism.State.FILLED,
-                // B24 fix: CLOSING_CLAW removed - startScoreSequence() only acts on FILLED,
-                // so accepting it let the wait return before the piece was confirmed and
-                // scoring silently became a no-op. Wait for FILLED (hasPiece guaranteed) instead.
-                S12_IntegratedMechanism.State.ERROR
-            )
+        startIntake(mechanism),
+        waitForAnyState(
+        mechanism,
+        timeoutSeconds,
+        S12_IntegratedMechanism.State.FILLED,
+        // B24 fix: CLOSING_CLAW removed - startScoreSequence() only acts on FILLED,
+        // so accepting it let the wait return before the piece was confirmed and
+        // scoring silently became a no-op. Wait for FILLED (hasPiece guaranteed) instead.
+        S12_IntegratedMechanism.State.ERROR
+        )
         );
     }
 
     public static Action scoreAndWait(S12_IntegratedMechanism mechanism, double timeoutSeconds) {
         return new SequentialAction(
-            startScore(mechanism),
-            waitForAnyState(
-                mechanism,
-                timeoutSeconds,
-                S12_IntegratedMechanism.State.IDLE,
-                S12_IntegratedMechanism.State.ERROR
-            )
+        startScore(mechanism),
+        waitForAnyState(
+        mechanism,
+        timeoutSeconds,
+        S12_IntegratedMechanism.State.IDLE,
+        S12_IntegratedMechanism.State.ERROR
+        )
         );
     }
 
@@ -89,9 +89,9 @@ public final class MechanismActions {
     }
 
     public static Action waitForAnyState(
-        S12_IntegratedMechanism mechanism,
-        double timeoutSeconds,
-        S12_IntegratedMechanism.State... states
+    S12_IntegratedMechanism mechanism,
+    double timeoutSeconds,
+    S12_IntegratedMechanism.State... states
     ) {
         return new Action() {
             private double startTime = -1;

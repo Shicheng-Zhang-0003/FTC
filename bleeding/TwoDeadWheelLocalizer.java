@@ -83,11 +83,11 @@ public final class TwoDeadWheelLocalizer implements Localizer {
         // Use degrees here to work around https://github.com/FIRST-Tech-Challenge/FtcRobotController/issues/1070
         AngularVelocity angularVelocityDegrees = imu.getRobotAngularVelocity(AngleUnit.DEGREES);
         AngularVelocity angularVelocity = new AngularVelocity(
-                UnnormalizedAngleUnit.RADIANS,
-                (float) Math.toRadians(angularVelocityDegrees.xRotationRate),
-                (float) Math.toRadians(angularVelocityDegrees.yRotationRate),
-                (float) Math.toRadians(angularVelocityDegrees.zRotationRate),
-                angularVelocityDegrees.acquisitionTime
+        UnnormalizedAngleUnit.RADIANS,
+        (float) Math.toRadians(angularVelocityDegrees.xRotationRate),
+        (float) Math.toRadians(angularVelocityDegrees.yRotationRate),
+        (float) Math.toRadians(angularVelocityDegrees.zRotationRate),
+        angularVelocityDegrees.acquisitionTime
         );
 
         FlightRecorder.write("TWO_DEAD_WHEEL_INPUTS", new TwoDeadWheelInputsMessage(parPosVel, perpPosVel, angles, angularVelocity));
@@ -117,20 +117,20 @@ public final class TwoDeadWheelLocalizer implements Localizer {
         double headingDelta = heading.minus(lastHeading);
 
         Twist2dDual<Time> twist = new Twist2dDual<>(
-                new Vector2dDual<>(
-                        new DualNum<Time>(new double[] {
-                                parPosDelta - PARAMS.parYTicks * headingDelta,
-                                parPosVel.velocity - PARAMS.parYTicks * headingVel,
-                        }).times(inPerTick),
-                        new DualNum<Time>(new double[] {
-                                perpPosDelta - PARAMS.perpXTicks * headingDelta,
-                                perpPosVel.velocity - PARAMS.perpXTicks * headingVel,
-                        }).times(inPerTick)
-                ),
-                new DualNum<>(new double[] {
-                        headingDelta,
-                        headingVel,
-                })
+        new Vector2dDual<>(
+        new DualNum<Time>(new double[] {
+            parPosDelta - PARAMS.parYTicks * headingDelta,
+            parPosVel.velocity - PARAMS.parYTicks * headingVel,
+        }).times(inPerTick),
+        new DualNum<Time>(new double[] {
+            perpPosDelta - PARAMS.perpXTicks * headingDelta,
+            perpPosVel.velocity - PARAMS.perpXTicks * headingVel,
+        }).times(inPerTick)
+        ),
+        new DualNum<>(new double[] {
+            headingDelta,
+            headingVel,
+        })
         );
 
         lastParPos = parPosVel.position;
