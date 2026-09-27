@@ -4,6 +4,12 @@ import com.acmerobotics.dashboard.config.Config;
 
 @Config
 public class RobotConstants {
+    // BIOBUZZ 26-27 SEASON (under-one-roof upgrade)
+    // Generic naming is kept: game piece == pollen, SLIDE_* == branch heights,
+    // SERVO_INTAKE == pollen intake, SERVO_DUMP == hive scoring.
+    // PURGE.PY archives the old pollen-specific S6/S7/S9 guesswork; S12 is the
+    // promoted generic mechanism — duplicate it and re-bind servos/sensors via
+    // HardwareNames for the real field.
     // Drive
     public static double DRIVE_MECANUM_STRAFE_COMPENSATION = 1.1;
     public static double DRIVE_STICK_DEADBAND = 0.05;
@@ -29,7 +35,7 @@ public class RobotConstants {
     public static double SLIDE_D = 0.0002;
     public static double SLIDE_INTEGRAL_CLAMP = 2.0;
     public static double SLIDE_OUTPUT_CLAMP = 1.0;
-public static double SLIDE_KG = 0.10; // B8 fix: gravity feedforward
+    public static double SLIDE_KG = 0.10; // B8 fix: gravity feedforward
     // B8 fix: feedforward power needed to hold the slide against gravity.
     // Tune on-robot: minimum power that stops the slide drooping at mid-height.
 
@@ -50,4 +56,18 @@ public static double SLIDE_KG = 0.10; // B8 fix: gravity feedforward
     public static double TIMING_SCORE_HOLD_SECONDS = 1.0;
     public static double TIMING_DUMP_SECONDS = 1.0;
     public static double TIMING_INTAKE_FILL_SECONDS = 1.5;
+
+    // ── BIOBUZZ Shooter (old-school) ─────────────────────────────────────
+    // Flywheel powers tuned on-robot for 2.8 in pollen @ ~48 in to HIVE (30.6 in high)
+    public static double SHOOTER_POLLEN_POWER = 0.85;
+    public static double SHOOTER_NECTAR_POWER = 0.92; // heavier 3.6 in needs more
+    public static double SHOOTER_SPINUP_SECONDS = 1.2;
+    public static double SHOOTER_FEED_STROKE_SECONDS = 0.35; // servo push + retract
+    public static double SHOOTER_RECOVERY_SECONDS = 0.30; // flywheel recovers between shots
+    public static double SERVO_FEEDER_STOWED = 0.20;
+    public static double SERVO_FEEDER_PUSH = 0.75;
+    // Encoder shooter: redundant PID not needed; old-school is plain power
+    // Autonomous shooter sequence: spinUp -> feed 4x -> stop
+    public static int SHOOTER_POLLEN_PER_AUTO = 4; // preload
+    public static double SHOOTER_POLLEN_INTERVAL_SECONDS = 0.8;
 }
